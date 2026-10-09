@@ -4,7 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>色差累積ビューア</title>
-<meta name="description" content="ターゲット・承認塗板・製品の3段で色差の累積を確認する計算ツール。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応。">
+<meta name="description" content="ターゲット・承認塗板・製品の3段で色差の累積を確認する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
+<link rel="canonical" href="https://kotaooka.github.io/deltae-calc/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="QC Workbench">
+<meta property="og:title" content="色差累積ビューア｜ターゲット・承認塗板・製品の色差">
+<meta property="og:description" content="ターゲット・承認塗板・製品の3段で色差の累積を確認する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
+<meta property="og:url" content="https://kotaooka.github.io/deltae-calc/">
+<meta property="og:image" content="https://kotaooka.github.io/deltae-calc/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="色差累積ビューア：CIE76・CIE94・CMC・CIEDE2000、5角度、フロップインデックス">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#2c5a86" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#13171c" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="色差累積">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -48,6 +66,9 @@ p{margin:0}
 .hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 24px;align-items:end}
 @media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
 .hero .eyebrow{font-size:.72rem;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:4px}
+.brand{display:flex;align-items:baseline;gap:6px;font-size:.78rem;color:var(--muted);margin-bottom:10px}
+.brand a{color:var(--muted);text-decoration:none}
+.brand a:hover{color:var(--accent);text-decoration:underline}
 .strip{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--line);min-width:260px;height:64px}
 .strip div{flex:1;display:flex;align-items:flex-end;padding:4px 8px;font-size:.72rem;font-weight:700}
 .strip.rel div{background:var(--sunk);color:var(--muted)}
@@ -146,6 +167,7 @@ details summary{cursor:pointer;font-weight:700}
 <div class="wrap">
   <header class="hero">
     <div>
+      <div class="brand"><a href="https://kotaooka.github.io/" title="QC Workbench（ツール一覧）へ戻る">QC Workbench</a><span aria-hidden="true">›</span><span>色差累積ビューア</span></div>
       <div class="eyebrow">ターゲット → 承認塗板 → 製品</div>
       <h1>色差累積ビューア</h1>
       <p class="lede">2 段の色差（ΔL*Δa*Δb*）を入れると、ターゲットから見た製品の色差・ずれの向き・許容差に対する余裕を図で示します。</p>
@@ -715,6 +737,27 @@ function update(){
   save();
 }
 syncControls(); renderInputs(); update();
+
+// オフラインで使えるように Service Worker を登録（https か localhost のときだけ。埋め込み表示では登録しない）
+(() => {
+  const embedded = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  if (embedded || !('serviceWorker' in navigator)) return;
+  if (!(location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const w = reg.installing;
+        if (!w) return;
+        w.addEventListener('statechange', () => {
+          // 既存版が動いている状態で新版が入ったときだけ知らせる
+          if (w.state === 'installed' && navigator.serviceWorker.controller) {
+            $('toast').textContent = '新しい版を取り込みました。開き直すと反映されます';
+          }
+        });
+      });
+    }).catch(() => { /* 登録できなくても計算には影響しない */ });
+  });
+})();
 </script>
 </body>
 </html>

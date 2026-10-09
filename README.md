@@ -32,6 +32,18 @@ CIE94・CMC・CIEDE2000 と FI は基準色そのものの L\*・C\*・h で重�
 - FI = 2.69 (L\*15° − L\*110°)^1.11 / L\*45°^0.86（X-Rite MA シリーズの定義）
 - 差の向きは「試料 − 基準」。CIE94 と CMC は基準側の値で重みが決まるため、向きを入れ替えると値が変わります
 
+## スマホ・PC にインストール（PWA）
+
+Web 版を開き、ブラウザのメニューから「ホーム画面に追加」（Android / iPhone）または「アプリをインストール」（Chrome / Edge）を選ぶと、アプリとして起動できます。
+一度開けば、以後はオフラインでも動きます。入力値は端末のブラウザ内にだけ保存され、外部には送信されません。
+
 ## ファイル構成
 
-`index.html` 1 枚で動作します（外部依存は Google Fonts のみ）。
+```
+index.html             本体（計算・描画をすべて含む。外部依存は Google Fonts のみ）
+manifest.webmanifest   PWA の設定
+sw.js                  Service Worker（オフライン用のキャッシュ）。公開ファイルを変えたら VERSION を上げる
+icons/                 アプリのアイコン
+og.png                 SNS 共有用の画像（1200×630）
+tools/make_images.py   icons/ と og.png を作り直すスクリプト（Noto Sans CJK JP を使用）
+```
