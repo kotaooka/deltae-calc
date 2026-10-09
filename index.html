@@ -170,7 +170,7 @@ details summary{cursor:pointer;font-weight:700}
       <div class="brand"><a href="https://kotaooka.github.io/" title="QC Workbench（ツール一覧）へ戻る">QC Workbench</a><span aria-hidden="true">›</span><span>色差累積ビューア</span></div>
       <div class="eyebrow">ターゲット → 承認塗板 → 製品</div>
       <h1>色差累積ビューア</h1>
-      <p class="lede">2 段の色差（ΔL*Δa*Δb*）を入れると、ターゲットから見た製品の色差・ずれの向き・許容差に対する余裕を図で示します。</p>
+      <p class="lede">2 段の色差（ΔL*Δa*Δb*）か 3 試料の L*a*b* を入れると、ターゲットから見た製品の色差・ずれの向き・許容差に対する余裕を図で示します。</p>
     </div>
     <div class="strip" id="strip" aria-label="3試料の色の目安"></div>
   </header>
@@ -191,11 +191,12 @@ details summary{cursor:pointer;font-weight:700}
           <button type="button" data-v="multi">5 角度</button>
         </div>
       </div>
-      <div class="ctl"><span class="lbl">絶対値 L*a*b* の入力</span>
-        <div class="seg" id="segAbs" role="group" aria-label="絶対値の入力">
-          <button type="button" data-v="none">なし</button>
-          <button type="button" data-v="target">ターゲット</button>
-          <button type="button" data-v="panel">承認塗板</button>
+      <div class="ctl"><span class="lbl">手元のデータ</span>
+        <div class="seg" id="segAbs" role="group" aria-label="手元のデータ">
+          <button type="button" data-v="none" title="差 1・差 2 の ΔL*Δa*Δb* だけ">差のみ</button>
+          <button type="button" data-v="target" title="差 1・差 2 と、ターゲットの L*a*b*">差＋ターゲット</button>
+          <button type="button" data-v="panel" title="差 1・差 2 と、承認塗板の L*a*b*">差＋承認塗板</button>
+          <button type="button" data-v="all" title="ターゲット・承認塗板・製品それぞれの L*a*b*">3 試料の絶対値</button>
         </div>
       </div>
       <div class="ctl" id="p94"><span class="lbl">CIE94 用途</span>
@@ -228,7 +229,7 @@ details summary{cursor:pointer;font-weight:700}
     <div class="panel">
       <div class="head"><h2>測定値</h2><span class="note">Excel の範囲を左上のセルに貼り付けできます</span></div>
       <div class="scroll"><table class="tin" id="tblIn"></table></div>
-      <p class="note">差は「試料 − 基準」（測色計の表示と同じ向き）。差 1 は承認塗板 − ターゲット、差 2 は製品 − 承認塗板。</p>
+      <p class="note" id="inNote"></p>
       <p class="note" id="sampleNote"></p>
     </div>
     <div class="panel">
@@ -301,7 +302,7 @@ details summary{cursor:pointer;font-weight:700}
   <footer class="foot">
     <div><b>計算式</b>　CIE76 = √(ΔL*²+Δa*²+Δb*²)。CIE94 = √((ΔL*/kL·SL)²+(ΔC*/SC)²+(ΔH*/SH)²)、SC=1+K1·C*、SH=1+K2·C*（C* は基準側）。CMC(l:c) は基準側の L*・C*・h で SL・SC・SH を決める式（<a href="https://support.hunterlab.com/hc/en-us/article_attachments/201440465" target="_blank" rel="noopener">HunterLab</a>）。CIEDE2000 は CIE 142-2001 の式で、<a href="https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/" target="_blank" rel="noopener">Sharma らの公式テストデータ</a> 34 組と一致を確認済み。</div>
     <div><b>フロップインデックス</b>　FI = 2.69 (L*15° − L*110°)^1.11 / L*45°^0.86。X-Rite MA シリーズで使われる定義で、ソリッドは 0、高フロップのメタリック・パールは 15〜17 程度（<a href="https://www.xrite.com/service-support/Definition_of_Flop_Index" target="_blank" rel="noopener">X-Rite</a>）。ΔFI は試料 − 基準。</div>
-    <div><b>差だけで計算できる範囲</b>　ターゲット → 製品の差は 2 段の差のベクトル和で、CIE76 ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000 と FI は基準色そのものの値で重みが変わるため、絶対値の入力が必要です。</div>
+    <div><b>差だけで計算できる範囲</b>　ターゲット → 製品の差は 2 段の差のベクトル和で、CIE76 ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000 と FI は基準色そのものの値で重みが変わるため、いずれかの試料の絶対値が必要です。3 試料とも絶対値がある場合は、差を入れずにそのまま使えます。</div>
     <div><b>累積の読み方</b>　「単純加算」は 2 段のずれが同じ向きに重なった場合の最大値、「二乗和平方根」は向きが無関係な場合の目安です。CIE76 では実際の値が単純加算を超えることはありませんが、CIE94・CMC・CIEDE2000 は距離の公理を満たさないため、わずかに超えることがあります。</div>
   </footer>
 </div>
@@ -402,8 +403,14 @@ const ANGLES=['15°','25°','45°','75°','110°'];
 const FNAME={de76:'CIE76',de94:'CIE94',cmc:'CMC',de00:'CIEDE2000'};
 const DEFAULT={
   formula:'de00', geom:'multi', absMode:'target', p94:'graphic', k:{kL:1,kC:1,kH:1}, cmc:{l:2,c:1}, singleLabel:'SCI', sel:0,
-  single:{abs:[[42.50,52.30,28.40]], d1:[[0.30,0.60,-0.30]], d2:[[0.50,0.50,-0.20]], tol:[[0.5],[0.8],[1.0]], fiTol:[1,1,1.5], touched:false},
+  single:{abs3:[[[42.50,52.30,28.40],[42.80,52.90,28.10],[43.30,53.40,27.90]]], abs:[[42.50,52.30,28.40]], d1:[[0.30,0.60,-0.30]], d2:[[0.50,0.50,-0.20]], tol:[[0.5],[0.8],[1.0]], fiTol:[1,1,1.5], touched:false},
   multi:{
+    abs3:[
+      [[118.2,-0.6,1.2],[117.4,-0.5,1.5],[115.9,-0.4,1.9]],
+      [[96.4,-0.5,0.9],[95.9,-0.5,1.1],[95.1,-0.4,1.3]],
+      [[58.1,-0.3,0.4],[58.3,-0.3,0.5],[58.6,-0.3,0.6]],
+      [[36.2,-0.2,-0.3],[36.5,-0.2,-0.2],[36.9,-0.1,-0.2]],
+      [[30.5,-0.1,-0.8],[30.9,-0.1,-0.7],[31.4,-0.1,-0.6]]],
     abs:[[118.2,-0.6,1.2],[96.4,-0.5,0.9],[58.1,-0.3,0.4],[36.2,-0.2,-0.3],[30.5,-0.1,-0.8]],
     d1:[[-0.8,0.1,0.3],[-0.5,0,0.2],[0.2,0,0.1],[0.3,0,0.1],[0.4,0,0.1]],
     d2:[[-1.5,0.1,0.4],[-0.8,0.1,0.2],[0.3,0,0.1],[0.4,0.1,0],[0.5,0,0.1]],
@@ -413,6 +420,7 @@ const KEY='deltae-calc-v2';
 let S=null;
 try{ S=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
 if(!S||!S.single||!S.multi||!S.single.d1) S=JSON.parse(JSON.stringify(DEFAULT));
+['single','multi'].forEach(g=>{ if(!S[g].abs3) S[g].abs3=JSON.parse(JSON.stringify(DEFAULT[g].abs3)); });
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
 
 const $=id=>document.getElementById(id);
@@ -426,17 +434,19 @@ const effFormula=()=>hasAbs()?S.formula:'de76';
 const opts=()=>({p94:S.p94,k:S.k,cmc:S.cmc});
 
 // ---------- 入力表 ----------
-function groups(){ return [...(hasAbs()?['abs']:[]),'d1','d2']; }
+function groups(){ return S.absMode==='all'?['t0','t1','t2']:[...(hasAbs()?['abs']:[]),'d1','d2']; }
+// 列グループ g の r 行目の値（配列）を返す
+function cellArr(g,r){ const c=cur(); return g[0]==='t'?c.abs3[r][+g[1]]:c[g][r]; }
 function renderInputs(){
   const L=angLabels(), c=cur(), G=groups();
-  const gname={abs:(S.absMode==='target'?'ターゲット':'承認塗板')+' 絶対値',d1:'差 1：承認塗板 − ターゲット',d2:'差 2：製品 − 承認塗板'};
-  const comp={abs:['L*','a*','b*'],d1:['ΔL*','Δa*','Δb*'],d2:['ΔL*','Δa*','Δb*']};
+  const gname={abs:(S.absMode==='target'?'ターゲット':'承認塗板')+' 絶対値',d1:'差 1：承認塗板 − ターゲット',d2:'差 2：製品 − 承認塗板',t0:'ターゲット',t1:'承認塗板',t2:'製品'};
+  const LAB=['L*','a*','b*'], comp={abs:LAB,d1:['ΔL*','Δa*','Δb*'],d2:['ΔL*','Δa*','Δb*'],t0:LAB,t1:LAB,t2:LAB};
   let h='<thead><tr><th></th>'+G.map((g,i)=>`<th colspan="3" class="grp${i?' sep':''}">${gname[g]}</th>`).join('')+'</tr><tr><th>'+(S.geom==='single'?'条件':'角度')+'</th>';
   G.forEach((g,i)=>comp[g].forEach((t,j)=>h+=`<th${i&&!j?' class="sep"':''}>${t}</th>`));
   h+='</tr></thead><tbody>';
   L.forEach((a,r)=>{
     h+=`<tr><td class="ang">${esc(a)}</td>`;
-    G.forEach((g,gi)=>{ for(let k=0;k<3;k++) h+=`<td${gi&&!k?' class="sep"':''}><input class="cell${g==='abs'?' abs':''}" id="in-${S.geom}-${g}-${r}-${k}" data-k="in" data-r="${r}" data-col="${gi*3+k}" inputmode="decimal" value="${c[g][r][k]}" aria-label="${esc(a)} ${gname[g]} ${comp[g][k]}"></td>`; });
+    G.forEach((g,gi)=>{ for(let k=0;k<3;k++) h+=`<td${gi&&!k?' class="sep"':''}><input class="cell${g==='abs'||g[0]==='t'?' abs':''}" id="in-${S.geom}-${g}-${r}-${k}" data-k="in" data-r="${r}" data-col="${gi*3+k}" inputmode="decimal" value="${cellArr(g,r)[k]}" aria-label="${esc(a)} ${gname[g]} ${comp[g][k]}"></td>`; });
     h+='</tr>';
   });
   $('tblIn').innerHTML=h+'</tbody>';
@@ -448,6 +458,7 @@ function renderInputs(){
   $('fiTolWrap').hidden=S.geom!=='multi';
   $('tblFiTol').innerHTML='<thead><tr><th style="text-align:left">|ΔFI| 許容差</th>'+PAIRS.map(p=>`<th style="color:${p.c}">${p.name.replace(' → ','→')}</th>`).join('')+'</tr></thead><tbody><tr><td></td>'+
     PAIRS.map((p,i)=>`<td><input class="cell" style="width:4.2em" id="fitol-${i}" data-k="fitol" data-r="0" data-col="${i}" inputmode="decimal" value="${S.multi.fiTol[i]}" aria-label="${p.name} ΔFI 許容差"></td>`).join('')+'</tr></tbody>';
+  $('inNote').textContent=S.absMode==='all'?'3 試料の L*a*b* から、承認塗板 − ターゲット、製品 − 承認塗板、製品 − ターゲット の差を計算します。':'差は「試料 − 基準」（測色計の表示と同じ向き）。差 1 は承認塗板 − ターゲット、差 2 は製品 − 承認塗板。';
   $('sampleNote').textContent=c.touched?'':'※ 表示中の値は動作確認用の架空のサンプルです（'+(S.geom==='single'?'赤のソリッド塗装':'シルバーメタリック')+'を想定）。';
 }
 function onCell(el){
@@ -456,7 +467,7 @@ function onCell(el){
   el.classList.toggle('bad',!ok);
   if(!ok) return;
   const r=+el.dataset.r, col=+el.dataset.col;
-  if(k==='in'){ const g=groups()[Math.floor(col/3)]; cur()[g][r][col%3]=v; }
+  if(k==='in'){ const g=groups()[Math.floor(col/3)]; cellArr(g,r)[col%3]=v; }
   else if(k==='tol') cur().tol[r][col]=v;
   else S.multi.fiTol[col]=v;
   cur().touched=true; $('sampleNote').textContent='';
@@ -483,6 +494,7 @@ document.addEventListener('paste',e=>{
 function points(i){
   const c=cur(), d1=c.d1[i], d2=c.d2[i], add=(a,b,s=1)=>a.map((v,k)=>v+s*b[k]);
   let T,P;
+  if(S.absMode==='all') return c.abs3[i].map(v=>v.slice());
   if(S.absMode==='target'){ T=c.abs[i].slice(); P=add(T,d1); }
   else if(S.absMode==='panel'){ P=c.abs[i].slice(); T=add(P,d1,-1); }
   else { T=[0,0,0]; P=d1.slice(); }
@@ -562,7 +574,7 @@ $('angChart').addEventListener('click',e=>{ const t=e.target.closest('[data-sel]
 function renderFI(R,FI){
   const box=$('fiBox');
   if(!FI){
-    box.innerHTML=`<div class="callout">FI は L*15°・L*45°・L*110° の絶対値から計算するため、差だけでは求められません。上の「絶対値 L*a*b* の入力」でターゲットか承認塗板を選び、値を入れてください。</div>`;
+    box.innerHTML=`<div class="callout">FI は L*15°・L*45°・L*110° の絶対値から計算するため、差だけでは求められません。上の「手元のデータ」で絶対値を含む入力を選び、値を入れてください。</div>`;
     return;
   }
   const W=360,H=122,ml=14,mr=14;
@@ -702,13 +714,36 @@ function syncControls(){
   $('multiRow').hidden=S.geom!=='multi';
   const n=$('formulaNote');
   n.hidden=abs;
-  n.textContent=abs?'':'絶対値なしでは CIE76 だけが計算できます。CIE94・CMC・CIEDE2000 とフロップインデックスは基準色の値で重みが変わるため、ターゲットか承認塗板の絶対値を入れると選べるようになります。';
+  n.textContent=abs?'':'絶対値なしでは CIE76 だけが計算できます。CIE94・CMC・CIEDE2000 とフロップインデックスは基準色の値で重みが変わるため、「手元のデータ」で絶対値を含む入力を選ぶと使えるようになります。';
   $('sel94').value=S.p94; $('cmcL').value=S.cmc.l; $('cmcC').value=S.cmc.c; $('kL').value=S.k.kL; $('kC').value=S.k.kC; $('kH').value=S.k.kH; $('singleLabel').value=S.singleLabel;
 }
 function seg(id,fn){ $(id).addEventListener('click',e=>{ const b=e.target.closest('button'); if(b&&!b.disabled){ fn(b.dataset.v); syncControls(); renderInputs(); update(); } }); }
 seg('segFormula',v=>S.formula=v);
 seg('segGeom',v=>{ S.geom=v; S.sel=0; });
-seg('segAbs',v=>S.absMode=v);
+// 切替前の値から、切替後のモードで使う欄を埋める（同じ 3 試料を表すように換算する）
+function switchAbs(next){
+  const prev=S.absMode;
+  if(prev===next) return;
+  const r4=v=>Math.round(v*1e4)/1e4, sub=(a,b)=>a.map((v,k)=>r4(v-b[k]));
+  ['single','multi'].forEach(gk=>{
+    const c=S[gk], save=S.geom; S.geom=gk;
+    const n=c.d1.length;
+    for(let i=0;i<n;i++){
+      const pts=points(i);
+      // 絶対値が分かっているモードからなら 3 試料すべて確定する
+      if(prev!=='none'){
+        c.abs3[i]=pts.map(p=>p.map(r4));
+        if(next==='target') c.abs[i]=pts[0].map(r4);
+        if(next==='panel') c.abs[i]=pts[1].map(r4);
+      }
+      // 差は常に座標から求め直せる（差のみ → 3 試料 のときは差だけ残し、絶対値は手入力を待つ）
+      if(prev==='all'||prev!=='none'){ c.d1[i]=sub(pts[1],pts[0]); c.d2[i]=sub(pts[2],pts[1]); }
+    }
+    S.geom=save;
+  });
+  S.absMode=next;
+}
+seg('segAbs',v=>switchAbs(v));
 $('angTabs').addEventListener('click',e=>{ const b=e.target.closest('[data-sel]'); if(b){ S.sel=+b.dataset.sel; update(); } });
 $('sel94').addEventListener('change',e=>{ S.p94=e.target.value; update(); });
 [['cmcL','l'],['cmcC','c']].forEach(([id,k])=>$(id).addEventListener('input',e=>{ const v=parseFloat(e.target.value); if(v>0){ S.cmc[k]=v; update(); } }));
