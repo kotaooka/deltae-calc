@@ -43,8 +43,8 @@ def dashed_ellipse(d, box, color, w, n=40):
 
 def motif(d, ox, oy, s, line_w, with_axes=True, bg=None, dot=0.055, head=2.6, show_total=True,
           pts=((0.42, 0.60), (0.60, 0.44), (0.74, 0.24)), ell=(0.40, 0.46, 0.40, 0.30)):
-    """a*b* 平面の図：許容範囲の楕円、ターゲット → 承認塗板 → 製品 の矢印。s は 1 辺の長さ"""
-    c, p, x = [(ox + s * u, oy + s * v) for u, v in pts]   # ターゲット・承認塗板・製品
+    """a*b* 平面の図：許容範囲の楕円、A → B → C の矢印。s は 1 辺の長さ"""
+    c, p, x = [(ox + s * u, oy + s * v) for u, v in pts]   # 試料 A・B・C
     r = s * dot
     if with_axes:
         d.line([(ox + s * 0.08, c[1]), (ox + s * 0.92, c[1])], fill=(255, 255, 255, 90), width=max(2, line_w // 2))
@@ -92,10 +92,10 @@ def og():
     d.text((72 * k, 106 * k), "QC Workbench", font=font("Regular", 26 * k), fill=(225, 234, 244))
     d.text((70 * k, 158 * k), "色差累積ビューア", font=font("Bold", 74 * k), fill=(255, 255, 255))
     sub = font("Regular", 28 * k)
-    d.text((72 * k, 266 * k), "ターゲット・承認塗板・製品の色差が", font=sub, fill=(225, 234, 244))
-    d.text((72 * k, 310 * k), "どう積み上がるかを図で確かめる", font=sub, fill=(225, 234, 244))
+    d.text((72 * k, 266 * k), "色を引き継いだときの色差の累積と、", font=sub, fill=(225, 234, 244))
+    d.text((72 * k, 310 * k), "2 色の中間色を図で確かめる", font=sub, fill=(225, 234, 244))
     pill = font("Regular", 22 * k)
-    rows = [["CIE76 / CIE94", "CMC", "CIEDE2000"], ["5 角度", "フロップインデックス"]]
+    rows = [["CIE76 / CIE94", "CMC", "CIEDE2000"], ["5 角度", "フロップインデックス", "中間色"]]
     y = 404 * k
     for row in rows:
         x = 72 * k
@@ -109,10 +109,10 @@ def og():
     # 右側の図
     s = 430 * k
     c, p, x = motif(d, 735 * k, 110 * k, s, 7 * k, bg=top)
-    lab = font("Regular", 20 * k)
-    d.text((c[0] + 22 * k, c[1] + 8 * k), "ターゲット", font=lab, fill=(255, 255, 255))
-    d.text((p[0] + 24 * k, p[1] + 2 * k), "承認塗板", font=lab, fill=(255, 255, 255))
-    d.text((x[0] + 24 * k, x[1] - 14 * k), "製品", font=lab, fill=(255, 255, 255))
+    lab = font("Bold", 24 * k)
+    d.text((c[0] + 22 * k, c[1] + 8 * k), "A", font=lab, fill=(255, 255, 255))
+    d.text((p[0] + 24 * k, p[1] + 2 * k), "B", font=lab, fill=(255, 255, 255))
+    d.text((x[0] + 24 * k, x[1] - 14 * k), "C", font=lab, fill=(255, 255, 255))
     d.text((735 * k + s * 0.92 - 40 * k, c[1] + 8 * k), "a*", font=lab, fill=(225, 234, 244))
     d.text((c[0] - 34 * k, 110 * k + s * 0.06), "b*", font=lab, fill=(225, 234, 244))
     return im.resize((1200, 630), Image.LANCZOS)

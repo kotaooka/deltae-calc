@@ -1,7 +1,7 @@
 {
   "name": "色差累積ビューア",
   "short_name": "色差累積",
-  "description": "ターゲット・承認塗板・製品の3段で色差の累積を確認する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応",
+  "description": "試料 A → B → C … と色を引き継いだときの色差の累積と、2色の中間色を計算する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応",
   "lang": "ja",
   "id": "./",
   "start_url": "./",
@@ -11,8 +11,23 @@
   "background_color": "#eceff2",
   "theme_color": "#2c5a86",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

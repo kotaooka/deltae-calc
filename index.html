@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>色差累積ビューア</title>
-<meta name="description" content="ターゲット・承認塗板・製品の3段で色差の累積を確認する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
+<meta name="description" content="試料 A → B → C … と色を引き継いだときの色差の累積と、2色の中間色を計算する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
 <link rel="canonical" href="https://kotaooka.github.io/deltae-calc/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="QC Workbench">
-<meta property="og:title" content="色差累積ビューア｜ターゲット・承認塗板・製品の色差">
-<meta property="og:description" content="ターゲット・承認塗板・製品の3段で色差の累積を確認する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
+<meta property="og:title" content="色差累積ビューア｜色差の累積と中間色">
+<meta property="og:description" content="試料 A → B → C … と色を引き継いだときの色差の累積と、2色の中間色を計算する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
 <meta property="og:url" content="https://kotaooka.github.io/deltae-calc/">
 <meta property="og:image" content="https://kotaooka.github.io/deltae-calc/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="色差累積ビューア：CIE76・CIE94・CMC・CIEDE2000、5角度、フロップインデックス">
+<meta property="og:image:alt" content="色差累積ビューア：色差の累積と中間色。CIE76・CIE94・CMC・CIEDE2000、5角度、フロップインデックス">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#2c5a86" media="(prefers-color-scheme: light)">
@@ -27,12 +27,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* レイアウト: 見出し＋3色帯 → 条件 → 入力（差分・許容差）→ 判定 → 角度別・FI → 選択条件の詳細 */
+/* レイアウト: 上部ヘッダー（QC Workbench 共通の見出し＋タブ）→ 計算条件 → タブごとの入力・判定・図 */
 :root{
   --bg:#eceff2; --surface:#f9fafb; --sunk:#e3e7eb; --ink:#1b2128; --muted:#58626e; --line:#cfd5dc;
   --accent:#2c5a86; --on-accent:#ffffff;
-  --s0:#1b2128; --s1:#2c5a86; --s2:#c2410c;
-  --tp:#17836a; --pp:#b8740a; --tt:#b02e6a;
+  /* 各段（前の試料 → 次の試料）の色 */
+  --c1:#17836a; --c2:#b8740a; --c3:#2f6db3; --c4:#7a4fb5; --c5:#5f7d1e;
+  /* 累積（A → 各試料）の色。q1 が最終の試料 */
+  --q1:#b02e6a; --q2:#c4608f; --q3:#d088aa; --q4:#ddb0c5;
   --ok:#2d7a4c; --okbg:#dcefe3; --ng:#c0392b; --ngbg:#f7dedb; --warn:#8a5d00; --warnbg:#f6ecd0;
   --f-disp:"Zen Kaku Gothic New","BIZ UDPGothic","Hiragino Sans","Yu Gothic UI",sans-serif;
   --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
@@ -41,37 +43,46 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#13171c; --surface:#1b2127; --sunk:#252c34; --ink:#e5e9ed; --muted:#9ba6b2; --line:#333c46;
-  --accent:#86b4e0; --on-accent:#0f1a26; --s0:#e5e9ed; --s1:#86b4e0; --s2:#ff9a62;
-  --tp:#4cc4a2; --pp:#efa93e; --tt:#ea6fa6;
+  --accent:#86b4e0; --on-accent:#0f1a26;
+  --c1:#4cc4a2; --c2:#efa93e; --c3:#78aef0; --c4:#b593f0; --c5:#a5c55a;
+  --q1:#ea6fa6; --q2:#c9628f; --q3:#a75679; --q4:#874a64;
   --ok:#6cc792; --okbg:#1f3a2a; --ng:#ff7b6b; --ngbg:#43231f; --warn:#e8c25a; --warnbg:#3b3219; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#13171c; --surface:#1b2127; --sunk:#252c34; --ink:#e5e9ed; --muted:#9ba6b2; --line:#333c46;
-  --accent:#86b4e0; --on-accent:#0f1a26; --s0:#e5e9ed; --s1:#86b4e0; --s2:#ff9a62;
-  --tp:#4cc4a2; --pp:#efa93e; --tt:#ea6fa6;
+  --accent:#86b4e0; --on-accent:#0f1a26;
+  --c1:#4cc4a2; --c2:#efa93e; --c3:#78aef0; --c4:#b593f0; --c5:#a5c55a;
+  --q1:#ea6fa6; --q2:#c9628f; --q3:#a75679; --q4:#874a64;
   --ok:#6cc792; --okbg:#1f3a2a; --ng:#ff7b6b; --ngbg:#43231f; --warn:#e8c25a; --warnbg:#3b3219; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.6}
-.wrap{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:24px 56px;display:flex;flex-direction:column;gap:20px}
-h1{font-family:var(--f-disp);font-weight:900;font-size:clamp(1.5rem,3.2vw,2rem);margin:0;letter-spacing:.02em;line-height:1.25;text-wrap:balance}
+
+/* 上部ヘッダー（QC Workbench のツール共通） */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:12px 0}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:1.15rem;margin:0;letter-spacing:.02em}
+.brand .std{font-size:.78rem;color:var(--muted)}
+.brand .home{font-size:.78rem;color:var(--muted);text-decoration:none;margin-right:-6px}
+.brand .home:hover{color:var(--accent);text-decoration:underline}
+.brand .crumb{font-size:.78rem;color:var(--muted);margin-right:-6px}
+nav.tabs{display:flex;gap:4px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:0 0 auto;border:0;background:none;color:var(--muted);font:inherit;font-size:.92rem;padding:8px 12px 10px;cursor:pointer;border-bottom:3px solid transparent}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:700}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+.wrap{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:flex;flex-direction:column;gap:20px}
+.tabpanel{display:flex;flex-direction:column;gap:20px}
 h2{font-family:var(--f-disp);font-weight:700;font-size:1.05rem;margin:0;text-wrap:balance}
 h3{font-size:.95rem;margin:0}
 p{margin:0}
-.lede{color:var(--muted);max-width:68ch}
+.lede{color:var(--muted);max-width:72ch}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .small{font-size:.82rem}
 .note{font-size:.8rem;color:var(--muted)}
-.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 24px;align-items:end}
-@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
-.hero .eyebrow{font-size:.72rem;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:4px}
-.brand{display:flex;align-items:baseline;gap:6px;font-size:.78rem;color:var(--muted);margin-bottom:10px}
-.brand a{color:var(--muted);text-decoration:none}
-.brand a:hover{color:var(--accent);text-decoration:underline}
-.strip{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--line);min-width:260px;height:64px}
-.strip div{flex:1;display:flex;align-items:flex-end;padding:4px 8px;font-size:.72rem;font-weight:700}
-.strip.rel div{background:var(--sunk);color:var(--muted)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px}
 .controls{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end}
@@ -91,56 +102,71 @@ input.cell.bad{border-color:var(--ng);background:var(--ngbg)}
 select{font-family:var(--f-body)}
 .btn{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer}
 .btn:hover{border-color:var(--accent)}
-.grid-in{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
-.tolgrid{display:flex;flex-wrap:wrap;gap:12px 32px;align-items:flex-start}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--sunk)}
+.stepper button{font:inherit;font-size:1rem;width:34px;height:32px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.stepper button:disabled{opacity:.35;cursor:not-allowed}
+.stepper output{min-width:7em;padding-inline:8px;text-align:center;font-weight:700;background:var(--surface);align-self:stretch;display:flex;align-items:center;justify-content:center;border-inline:1px solid var(--line)}
+.range{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.range input[type="range"]{width:200px;max-width:100%;accent-color:var(--accent)}
 .scroll{overflow-x:auto;min-width:0}
 table{border-collapse:collapse}
 .tin th,.tin td{padding:3px 4px;text-align:center;white-space:nowrap}
 .tin thead th{font-size:.76rem;color:var(--muted);font-weight:700}
-.tin .grp{border-bottom:2px solid var(--line);font-size:.8rem;color:var(--ink);padding-bottom:4px}
+.tin .grp{border-bottom:2px solid var(--line);font-size:.82rem;color:var(--ink);padding-bottom:4px}
 .tin td.ang{font-family:var(--f-num);font-weight:600;padding-right:10px;text-align:left}
-.tin td.pname{font-weight:700;text-align:left;padding-right:10px}
+.tin td.pname{font-weight:700;text-align:left;padding-right:12px}
+.tin tr.sub td{text-align:left;font-size:.74rem;color:var(--muted);font-weight:700;letter-spacing:.06em;padding-top:8px}
 .tin .sep{border-left:1px solid var(--line);padding-left:8px}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .callout{font-size:.82rem;padding:8px 10px;border-radius:8px;background:var(--sunk)}
-.callout.warn{background:var(--warnbg);border:1px solid var(--warn)}
 .banner{display:flex;gap:16px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid var(--line);flex-wrap:wrap}
 .banner.ok{background:var(--okbg);border-color:var(--ok)}
 .banner.ng{background:var(--ngbg);border-color:var(--ng)}
 .banner .big{font-family:var(--f-disp);font-weight:900;font-size:1.5rem;line-height:1.2;white-space:nowrap}
 .banner.ok .big{color:var(--ok)} .banner.ng .big{color:var(--ng)}
 .banner .body{flex:1 1 280px;min-width:0}
-.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-@media (max-width:760px){.cards{grid-template-columns:minmax(0,1fr)}}
+.cardgroup{display:flex;flex-direction:column;gap:8px}
+.cardgroup>.lbl{padding-left:2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;box-shadow:inset 0 4px 0 var(--c)}
 .card .route{font-weight:700;font-size:.9rem;color:var(--c);padding-top:2px}
 .card .val{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.card .val .n{font-family:var(--f-num);font-size:2.1rem;font-weight:600;line-height:1}
+.card .val .n{font-family:var(--f-num);font-size:2rem;font-weight:600;line-height:1}
 .card .val .u{font-size:.8rem;color:var(--muted)}
 .chip{display:inline-block;font-size:.74rem;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
-.chip.ok{color:var(--ok);background:var(--okbg)} .chip.ng{color:var(--ng);background:var(--ngbg)} .chip.warn{color:var(--warn);background:var(--warnbg)} .chip.na{color:var(--muted);background:var(--sunk)}
+.chip.ok{color:var(--ok);background:var(--okbg)} .chip.ng{color:var(--ng);background:var(--ngbg)} .chip.warn{color:var(--warn);background:var(--warnbg)}
 .minis{display:flex;gap:4px;flex-wrap:wrap}
 .mini{font-family:var(--f-num);font-size:.72rem;padding:0 5px;border-radius:4px;border:1px solid var(--line)}
 .mini.ng{border-color:var(--ng);color:var(--ng)}
 .two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
 @media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tabs-ang{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .detail{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px}
 @media (max-width:900px){.detail{grid-template-columns:minmax(0,1fr)}}
 .col{display:flex;flex-direction:column;gap:16px;min-width:0}
 svg{display:block;max-width:100%}
 svg text{font-family:var(--f-body);fill:var(--muted)}
 svg .t-num{font-family:var(--f-num)}
-.sw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-radius:10px;overflow:hidden;border:1px solid var(--line)}
-.sw div+div,.strip div+div{border-left:1px solid var(--line)}
-.sw div{height:68px;display:flex;align-items:flex-end;padding:6px 8px;font-size:.78rem;font-weight:700}
+.maprow{display:flex;gap:8px;align-items:stretch;margin-top:6px}
+.maprow .ab{flex:1 1 auto;min-width:0}
+.maprow .lb{flex:0 0 120px;width:120px}
+.sw{display:flex;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.sw div{flex:1;height:64px;display:flex;align-items:flex-end;padding:6px 8px;font-size:.8rem;font-weight:700}
+.sw div+div{border-left:1px solid var(--line)}
+.grad{position:relative;display:flex;height:56px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.grad span{flex:1}
+.grad .mk{position:absolute;top:0;bottom:0;width:0;border-left:2px solid var(--ink);box-shadow:0 0 0 1px var(--surface)}
+.grad .mk b{position:absolute;top:4px;left:4px;font-size:.75rem;background:var(--surface);color:var(--ink);padding:0 4px;border-radius:4px}
+.gradlab{display:flex;justify-content:space-between;font-size:.8rem;font-weight:700}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{display:inline-block;width:18px;height:3px;border-radius:2px;background:var(--c)}
 .legend i.dash{background:repeating-linear-gradient(90deg,var(--c) 0 4px,transparent 4px 7px)}
 .acc{display:flex;flex-direction:column;gap:8px}
 .arow{display:grid;grid-template-columns:8.5em minmax(0,1fr) 3.6em;gap:8px;align-items:center;font-size:.82rem}
-.track{position:relative;height:18px;background:var(--sunk);border-radius:4px}
-.track .seg1,.track .seg2,.track .bar{position:absolute;top:0;bottom:0}
+.track{position:relative;height:18px;background:var(--sunk);border-radius:4px;overflow:visible}
+.track .bar{position:absolute;top:0;bottom:0}
 .tolline{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink)}
 .says{background:var(--sunk);border-radius:8px;padding:8px 10px;font-size:.85rem}
 .says.warn{background:var(--warnbg);border:1px solid var(--warn)}
@@ -150,31 +176,40 @@ svg .t-num{font-family:var(--f-num)}
 .comp .track{height:12px}
 .comp .mid{position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1px solid var(--muted)}
 .pairblk{display:flex;flex-direction:column;gap:6px;padding-top:10px;border-top:1px solid var(--line)}
-.fi-rows{display:flex;flex-direction:column;gap:8px}
+.fi-rows{display:flex;flex-direction:column;gap:6px}
 .fi-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;font-size:.85rem}
 .fi-row b{color:var(--c)}
 .tres th,.tres td{padding:4px 8px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
 .tres th:first-child,.tres td:first-child{text-align:left}
 .tres thead th{font-size:.75rem;color:var(--muted)}
+.mres{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.mres .card .n{font-size:1.5rem}
+.labv{display:flex;gap:14px;flex-wrap:wrap}
+.labv span{display:flex;flex-direction:column;line-height:1.15}
+.labv small{font-size:.72rem;color:var(--muted)}
+.labv b{font-size:1.3rem;font-weight:600}
 details summary{cursor:pointer;font-weight:700}
 .foot{font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:6px;max-width:82ch}
 .foot a{color:var(--accent)}
-.toast{font-size:.8rem;color:var(--ok)}
-@media (prefers-reduced-motion:no-preference){.track .seg1,.track .seg2,.track .bar{transition:width .25s ease,left .25s ease}}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:10;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.85rem;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.track .bar{transition:width .25s ease,left .25s ease}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="hero">
-    <div>
-      <div class="brand"><a href="https://kotaooka.github.io/" title="QC Workbench（ツール一覧）へ戻る">QC Workbench</a><span aria-hidden="true">›</span><span>色差累積ビューア</span></div>
-      <div class="eyebrow">ターゲット → 承認塗板 → 製品</div>
-      <h1>色差累積ビューア</h1>
-      <p class="lede">2 段の色差（ΔL*Δa*Δb*）か 3 試料の L*a*b* を入れると、ターゲットから見た製品の色差・ずれの向き・許容差に対する余裕を図で示します。</p>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <a class="home" href="https://kotaooka.github.io/" title="QC Workbench（ツール一覧）へ戻る">QC Workbench</a><span class="crumb" aria-hidden="true">›</span><h1>色差累積ビューア</h1>
+      <span class="std">CIE76 / CIE94 / CMC / CIEDE2000・単一条件／5 角度</span>
     </div>
-    <div class="strip" id="strip" aria-label="3試料の色の目安"></div>
-  </header>
+    <nav class="tabs" role="tablist" aria-label="計算の種類">
+      <button role="tab" id="tab-acc" aria-controls="p-acc" data-tab="acc">色差の累積</button>
+      <button role="tab" id="tab-mid" aria-controls="p-mid" data-tab="mid">中間色</button>
+    </nav>
+  </div>
+</header>
 
+<div class="wrap">
   <section class="panel" aria-label="計算条件">
     <div class="controls">
       <div class="ctl"><span class="lbl">色差式</span>
@@ -189,14 +224,6 @@ details summary{cursor:pointer;font-weight:700}
         <div class="seg" id="segGeom" role="group" aria-label="測定条件">
           <button type="button" data-v="single">単一条件</button>
           <button type="button" data-v="multi">5 角度</button>
-        </div>
-      </div>
-      <div class="ctl"><span class="lbl">手元のデータ</span>
-        <div class="seg" id="segAbs" role="group" aria-label="手元のデータ">
-          <button type="button" data-v="none" title="差 1・差 2 の ΔL*Δa*Δb* だけ">差のみ</button>
-          <button type="button" data-v="target" title="差 1・差 2 と、ターゲットの L*a*b*">差＋ターゲット</button>
-          <button type="button" data-v="panel" title="差 1・差 2 と、承認塗板の L*a*b*">差＋承認塗板</button>
-          <button type="button" data-v="all" title="ターゲット・承認塗板・製品それぞれの L*a*b*">3 試料の絶対値</button>
         </div>
       </div>
       <div class="ctl" id="p94"><span class="lbl">CIE94 用途</span>
@@ -225,87 +252,154 @@ details summary{cursor:pointer;font-weight:700}
     <div class="callout" id="formulaNote" hidden></div>
   </section>
 
-  <section class="grid-in">
-    <div class="panel">
+  <!-- ===== 色差の累積 ===== -->
+  <div class="tabpanel" id="p-acc" role="tabpanel" aria-labelledby="tab-acc">
+    <section class="panel" aria-label="測定値">
       <div class="head"><h2>測定値</h2><span class="note">Excel の範囲を左上のセルに貼り付けできます</span></div>
-      <div class="scroll"><table class="tin" id="tblIn"></table></div>
-      <p class="note" id="inNote"></p>
-      <p class="note" id="sampleNote"></p>
-    </div>
-    <div class="panel">
-      <div class="head"><h2>許容差</h2></div>
-      <div class="tolgrid"><div class="scroll"><table class="tin" id="tblTol"></table></div>
-      <div class="scroll" id="fiTolWrap"><table class="tin" id="tblFiTol"></table></div></div>
-      <div class="tabs">
-        <button type="button" class="btn" id="btnReset">サンプル値に戻す</button>
-        <button type="button" class="btn" id="btnCopy">結果を TSV でコピー</button>
-        <span class="toast" id="toast" aria-live="polite"></span>
-      </div>
-      <div id="copyFallback"></div>
-    </div>
-  </section>
-
-  <section aria-label="判定" style="display:flex;flex-direction:column;gap:12px">
-    <div id="banner"></div>
-    <div class="cards" id="cards"></div>
-  </section>
-
-  <section class="two" id="multiRow">
-    <div class="panel" aria-label="角度別の色差">
-      <div class="head"><h2>角度別の色差</h2><span class="note">棒をクリックで下の詳細を切替。破線＝許容差</span></div>
-      <div class="scroll"><svg id="angChart" viewBox="0 0 520 250" width="100%" role="img" aria-label="角度別の色差の棒グラフ"></svg></div>
-      <div class="legend">
-        <span style="--c:var(--tp)"><i></i>ターゲット → 承認塗板</span>
-        <span style="--c:var(--pp)"><i></i>承認塗板 → 製品</span>
-        <span style="--c:var(--tt)"><i></i>ターゲット → 製品</span>
-      </div>
-    </div>
-    <div class="panel" aria-label="フロップインデックス">
-      <div class="head"><h2>フロップインデックス</h2><span class="note">FI = 2.69 (L*15° − L*110°)<sup>1.11</sup> / L*45°<sup>0.86</sup></span></div>
-      <div id="fiBox"></div>
-    </div>
-  </section>
-
-  <section class="panel" aria-label="詳細">
-    <div class="head">
-      <h2 id="detailTitle">詳細</h2>
-      <div class="tabs" id="angTabs"></div>
-    </div>
-    <div id="swBox"></div>
-    <div class="detail">
-      <div class="col">
-        <div>
-          <h3 id="abTitle">色の地図（a*b* 平面）と明るさ（L*）</h3>
-          <div style="display:flex;gap:8px;align-items:stretch;margin-top:6px">
-            <svg id="abChart" viewBox="0 0 360 360" style="flex:1 1 auto;min-width:0" role="img" aria-label="a*b*平面"></svg>
-            <svg id="lChart" viewBox="0 0 120 360" style="flex:0 0 108px;width:108px" role="img" aria-label="L*の比較"></svg>
+      <p class="lede">試料 A → B → C … と色を引き継いだとき、各段の色差と、A から見た色差がどう積み上がるかを示します。</p>
+      <div class="controls">
+        <div class="ctl"><span class="lbl">試料の数</span>
+          <div class="stepper"><button type="button" id="nMinus" aria-label="試料を減らす">−</button><output id="nOut" aria-live="polite"></output><button type="button" id="nPlus" aria-label="試料を増やす">＋</button></div>
+        </div>
+        <div class="ctl"><span class="lbl">手元のデータ</span>
+          <div class="seg" id="segAccMode" role="group" aria-label="手元のデータ">
+            <button type="button" data-v="none" title="各段の差 ΔL*Δa*Δb* だけ">差のみ</button>
+            <button type="button" data-v="anchor" title="各段の差と、どれか 1 試料の L*a*b*">差＋1 試料の絶対値</button>
+            <button type="button" data-v="all" title="すべての試料の L*a*b*">全試料の絶対値</button>
           </div>
-          <div class="legend" style="margin-top:6px">
-            <span style="--c:var(--tp)"><i></i>ターゲット → 承認塗板</span>
-            <span style="--c:var(--pp)"><i></i>承認塗板 → 製品</span>
-            <span style="--c:var(--tt)"><i class="dash"></i>ターゲット → 製品</span>
-          </div>
-          <p class="note" id="contourNote" style="margin-top:6px"></p>
+        </div>
+        <div class="ctl" id="anchorCtl"><span class="lbl">絶対値がある試料</span>
+          <select id="selAnchor" aria-label="絶対値がある試料"></select>
         </div>
       </div>
-      <div class="col">
-        <div class="acc" id="acc"></div>
-        <div id="comp" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="scroll"><table class="tin" id="accIn"></table></div>
+      <p class="note" id="accInNote"></p>
+      <p class="note" id="accSample"></p>
+    </section>
+
+    <section class="panel" aria-label="許容差">
+      <div class="head"><h2>許容差</h2><span class="note">ΔE は選んだ色差式の値。|ΔFI| はフロップインデックスの差の絶対値</span></div>
+      <div class="scroll"><table class="tin" id="accTol"></table></div>
+      <div class="tabs-ang">
+        <button type="button" class="btn" id="accReset">サンプル値に戻す</button>
+        <button type="button" class="btn" id="accCopy">結果を TSV でコピー</button>
       </div>
-    </div>
-    <details>
-      <summary class="small">数値の詳細</summary>
-      <div class="scroll"><table class="tres" id="tblRes"></table></div>
-    </details>
-  </section>
+      <div id="accCopyFb"></div>
+    </section>
+
+    <section aria-label="判定" style="display:flex;flex-direction:column;gap:12px">
+      <div id="accBanner"></div>
+      <div id="accCards" style="display:flex;flex-direction:column;gap:14px"></div>
+    </section>
+
+    <section class="two" id="accMulti">
+      <div class="panel" aria-label="角度別の色差">
+        <div class="head"><h2>角度別の色差</h2><span class="note">棒をクリックで下の詳細を切替。破線＝許容差</span></div>
+        <div class="scroll"><svg id="accAng" viewBox="0 0 520 250" width="100%" role="img" aria-label="角度別の色差の棒グラフ"></svg></div>
+        <div class="legend" id="accAngLegend"></div>
+      </div>
+      <div class="panel" aria-label="フロップインデックス">
+        <div class="head"><h2>フロップインデックス</h2><span class="note">FI = 2.69 (L*15° − L*110°)<sup>1.11</sup> / L*45°<sup>0.86</sup></span></div>
+        <div id="accFi"></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="詳細">
+      <div class="head"><h2 id="accDetailTitle">詳細</h2><div class="tabs-ang" id="accAngTabs"></div></div>
+      <div id="accSw"></div>
+      <div class="detail">
+        <div class="col">
+          <div>
+            <h3 id="accAbTitle"></h3>
+            <div class="maprow">
+              <svg class="ab" id="accAb" viewBox="0 0 360 360" role="img" aria-label="a*b*平面"></svg>
+              <svg class="lb" id="accL" viewBox="0 0 140 360" role="img" aria-label="L*の比較"></svg>
+            </div>
+            <div class="legend" id="accAbLegend" style="margin-top:6px"></div>
+            <p class="note" id="accContourNote" style="margin-top:6px"></p>
+          </div>
+        </div>
+        <div class="col">
+          <div class="acc" id="accAcc"></div>
+          <div id="accComp" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+      <details>
+        <summary class="small">数値の詳細</summary>
+        <div class="scroll"><table class="tres" id="accRes"></table></div>
+      </details>
+    </section>
+  </div>
+
+  <!-- ===== 中間色 ===== -->
+  <div class="tabpanel" id="p-mid" role="tabpanel" aria-labelledby="tab-mid">
+    <section class="panel" aria-label="2色の測定値">
+      <div class="head"><h2>2 色の測定値</h2><span class="note">Excel の範囲を左上のセルに貼り付けできます</span></div>
+      <p class="lede">色 A と色 B の中間の色 M を求めます。選んだ色差式で、M から A と B への色差が指定の比になる点を、A と B を結ぶ線上で探します。</p>
+      <div class="controls">
+        <div class="ctl"><span class="lbl">手元のデータ</span>
+          <div class="seg" id="segMidMode" role="group" aria-label="手元のデータ">
+            <button type="button" data-v="all">A・B の絶対値</button>
+            <button type="button" data-v="anchor">A の絶対値＋差（B − A）</button>
+          </div>
+        </div>
+        <div class="ctl"><span class="lbl">M の位置（A からの色差の割合）</span>
+          <div class="range">
+            <input type="range" id="midT" min="0" max="100" step="1" aria-label="M の位置">
+            <input class="cell" id="midTnum" inputmode="decimal" aria-label="M の位置（%）" style="width:4.4em"><span class="small">%</span>
+            <span class="note" id="midTnote"></span>
+          </div>
+        </div>
+      </div>
+      <div class="scroll"><table class="tin" id="midIn"></table></div>
+      <p class="note" id="midSample"></p>
+      <div class="tabs-ang">
+        <button type="button" class="btn" id="midReset">サンプル値に戻す</button>
+        <button type="button" class="btn" id="midCopy">結果を TSV でコピー</button>
+      </div>
+      <div id="midCopyFb"></div>
+    </section>
+
+    <section class="panel" aria-label="中間色の結果">
+      <div class="head"><h2 id="midTitle">中間色</h2><div class="tabs-ang" id="midAngTabs"></div></div>
+      <div class="mres" id="midCards"></div>
+      <div>
+        <div class="gradlab"><span>A</span><span>B</span></div>
+        <div class="grad" id="midGrad"></div>
+        <p class="note" style="margin-top:6px">A から B へ L*a*b* で等間隔に並べた色と、M の位置。色は L*a*b*（D65 前提）を sRGB に変換した目安です。</p>
+      </div>
+      <div class="detail">
+        <div class="col">
+          <div>
+            <h3>色の地図（a*b* 平面）と明るさ（L*）</h3>
+            <div class="maprow">
+              <svg class="ab" id="midAb" viewBox="0 0 360 360" role="img" aria-label="a*b*平面"></svg>
+              <svg class="lb" id="midL" viewBox="0 0 140 360" role="img" aria-label="L*の比較"></svg>
+            </div>
+            <p class="note" id="midContourNote" style="margin-top:6px"></p>
+          </div>
+        </div>
+        <div class="col">
+          <div id="midFi"></div>
+          <div>
+            <h3>角度ごとの中間色</h3>
+            <div class="scroll" style="margin-top:6px"><table class="tres" id="midRes"></table></div>
+          </div>
+          <p class="note" id="midMethodNote"></p>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <footer class="foot">
     <div><b>計算式</b>　CIE76 = √(ΔL*²+Δa*²+Δb*²)。CIE94 = √((ΔL*/kL·SL)²+(ΔC*/SC)²+(ΔH*/SH)²)、SC=1+K1·C*、SH=1+K2·C*（C* は基準側）。CMC(l:c) は基準側の L*・C*・h で SL・SC・SH を決める式（<a href="https://support.hunterlab.com/hc/en-us/article_attachments/201440465" target="_blank" rel="noopener">HunterLab</a>）。CIEDE2000 は CIE 142-2001 の式で、<a href="https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/" target="_blank" rel="noopener">Sharma らの公式テストデータ</a> 34 組と一致を確認済み。</div>
     <div><b>フロップインデックス</b>　FI = 2.69 (L*15° − L*110°)^1.11 / L*45°^0.86。X-Rite MA シリーズで使われる定義で、ソリッドは 0、高フロップのメタリック・パールは 15〜17 程度（<a href="https://www.xrite.com/service-support/Definition_of_Flop_Index" target="_blank" rel="noopener">X-Rite</a>）。ΔFI は試料 − 基準。</div>
-    <div><b>差だけで計算できる範囲</b>　ターゲット → 製品の差は 2 段の差のベクトル和で、CIE76 ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000 と FI は基準色そのものの値で重みが変わるため、いずれかの試料の絶対値が必要です。3 試料とも絶対値がある場合は、差を入れずにそのまま使えます。</div>
-    <div><b>累積の読み方</b>　「単純加算」は 2 段のずれが同じ向きに重なった場合の最大値、「二乗和平方根」は向きが無関係な場合の目安です。CIE76 では実際の値が単純加算を超えることはありませんが、CIE94・CMC・CIEDE2000 は距離の公理を満たさないため、わずかに超えることがあります。</div>
+    <div><b>差だけで計算できる範囲</b>　A から各試料への差は各段の差のベクトル和で、CIE76 ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000 と FI は基準色そのものの値で重みが変わるため、いずれかの試料の絶対値が必要です。</div>
+    <div><b>累積の読み方</b>　「単純加算」は各段のずれが同じ向きに重なった場合の最大値、「二乗和平方根」は向きが無関係な場合の目安です。CIE76 では実際の値が単純加算を超えることはありませんが、CIE94・CMC・CIEDE2000 は距離の公理を満たさないため、わずかに超えることがあります。</div>
+    <div><b>中間色</b>　M は A と B を L*a*b* で結んだ線上の点で、ΔE(M→A) : ΔE(M→B) が指定の比になる位置を二分法で求めます（M を基準として計算）。CIE76 では L*a*b* の単純な内分点と一致します。5 角度の場合は角度ごとに独立に求めます。</div>
   </footer>
 </div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
 /*MATH-START*/
@@ -380,6 +474,20 @@ function flopIndex(L15,L45,L110){
   const d=L15-L110;
   return 2.69*Math.sign(d)*Math.pow(Math.abs(d),1.11)/Math.pow(L45,0.86);
 }
+// 中間色：A と B を結ぶ線上で、ΔE(M→A) / (ΔE(M→A)+ΔE(M→B)) = t となる M を二分法で求める（M を基準に計算）
+function midPoint(A,B,t,f,o){
+  const lerp=s=>A.map((v,k)=>v+s*(B[k]-v));
+  if(f==='de76'||Math.hypot(B[0]-A[0],B[1]-A[1],B[2]-A[2])<1e-12) return {M:lerp(t),s:t};
+  if(t<=0) return {M:A.slice(),s:0};
+  if(t>=1) return {M:B.slice(),s:1};
+  let lo=0, hi=1;
+  for(let it=0;it<60;it++){
+    const s=(lo+hi)/2, M=lerp(s), dA=deltaE(f,M,A,o).dE, dB=deltaE(f,M,B,o).dE;
+    if(dA/(dA+dB)<t) lo=s; else hi=s;
+  }
+  const s=(lo+hi)/2;
+  return {M:lerp(s),s};
+}
 /*MATH-END*/
 
 // L*a*b*（D65）→ sRGB（表示の目安）
@@ -390,216 +498,222 @@ function lab2rgb(L,a,b){
   const lin=[3.2404542*X-1.5371385*Y-0.4985314*Z, -0.9692660*X+1.8760108*Y+0.0415560*Z, 0.0556434*X-0.2040259*Y+1.0572252*Z];
   return lin.map(c=>{c=Math.min(1,Math.max(0,c)); return Math.round(255*(c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055));});
 }
+const rgbCss=l=>`rgb(${lab2rgb(...l)})`;
+const inkOn=l=>l[0]>55?'#111':'#f4f4f4';
 
-// ---------- 状態 ----------
-const SAMPLES=['ターゲット','承認塗板','製品'];
-const SCOL=['var(--s0)','var(--s1)','var(--s2)'];
-const PAIRS=[
-  {id:'tp',ref:0,smp:1,name:'ターゲット → 承認塗板',c:'var(--tp)'},
-  {id:'pp',ref:1,smp:2,name:'承認塗板 → 製品',c:'var(--pp)'},
-  {id:'tt',ref:0,smp:2,name:'ターゲット → 製品',c:'var(--tt)'}
-];
+// ---------- 定数 ----------
+const LET='ABCDEF', NMIN=2, NMAX=6;
 const ANGLES=['15°','25°','45°','75°','110°'];
 const FNAME={de76:'CIE76',de94:'CIE94',cmc:'CMC',de00:'CIEDE2000'};
+const STEPC=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'];
+const CUMC=['var(--q1)','var(--q2)','var(--q3)','var(--q4)'];
+const MCOL='var(--q1)';
+// 試料の色：A は文字色、それ以外は「その試料へ入る段」の色
+const sCol=s=>s===0?'var(--ink)':STEPC[s-1];
+
+// 判定する組み合わせ：各段（i → i+1）と累積（A → k、k ≥ 2）
+function pairsOf(n){
+  const P=[];
+  for(let i=0;i<n-1;i++) P.push({id:`${i}-${i+1}`,a:i,b:i+1,kind:'step',c:STEPC[i]});
+  for(let k=2;k<n;k++) P.push({id:`0-${k}`,a:0,b:k,kind:'cum',c:CUMC[Math.min(3,n-1-k)]});
+  P.forEach(p=>p.name=`${LET[p.a]} → ${LET[p.b]}`);
+  return P;
+}
+const finalId=n=>`0-${n-1}`;
+
+// ---------- 状態 ----------
+const SILVER=[
+  [[118.2,-0.6,1.2],[117.4,-0.5,1.5],[115.9,-0.4,1.9]],
+  [[96.4,-0.5,0.9],[95.9,-0.5,1.1],[95.1,-0.4,1.3]],
+  [[58.1,-0.3,0.4],[58.3,-0.3,0.5],[58.6,-0.3,0.6]],
+  [[36.2,-0.2,-0.3],[36.5,-0.2,-0.2],[36.9,-0.1,-0.2]],
+  [[30.5,-0.1,-0.8],[30.9,-0.1,-0.7],[31.4,-0.1,-0.6]]];
 const DEFAULT={
-  formula:'de00', geom:'multi', absMode:'target', p94:'graphic', k:{kL:1,kC:1,kH:1}, cmc:{l:2,c:1}, singleLabel:'SCI', sel:0,
-  single:{abs3:[[[42.50,52.30,28.40],[42.80,52.90,28.10],[43.30,53.40,27.90]]], abs:[[42.50,52.30,28.40]], d1:[[0.30,0.60,-0.30]], d2:[[0.50,0.50,-0.20]], tol:[[0.5],[0.8],[1.0]], fiTol:[1,1,1.5], touched:false},
-  multi:{
-    abs3:[
-      [[118.2,-0.6,1.2],[117.4,-0.5,1.5],[115.9,-0.4,1.9]],
-      [[96.4,-0.5,0.9],[95.9,-0.5,1.1],[95.1,-0.4,1.3]],
-      [[58.1,-0.3,0.4],[58.3,-0.3,0.5],[58.6,-0.3,0.6]],
-      [[36.2,-0.2,-0.3],[36.5,-0.2,-0.2],[36.9,-0.1,-0.2]],
-      [[30.5,-0.1,-0.8],[30.9,-0.1,-0.7],[31.4,-0.1,-0.6]]],
-    abs:[[118.2,-0.6,1.2],[96.4,-0.5,0.9],[58.1,-0.3,0.4],[36.2,-0.2,-0.3],[30.5,-0.1,-0.8]],
-    d1:[[-0.8,0.1,0.3],[-0.5,0,0.2],[0.2,0,0.1],[0.3,0,0.1],[0.4,0,0.1]],
-    d2:[[-1.5,0.1,0.4],[-0.8,0.1,0.2],[0.3,0,0.1],[0.4,0.1,0],[0.5,0,0.1]],
-    tol:[[1.0,0.8,0.5,0.5,0.6],[1.5,1.2,0.8,0.8,1.0],[2.0,1.5,1.0,1.0,1.2]], fiTol:[0.5,0.8,1.0], touched:false}
+  tab:'acc', formula:'de00', geom:'multi', p94:'graphic', k:{kL:1,kC:1,kH:1}, cmc:{l:2,c:1}, singleLabel:'SCI', sel:0,
+  acc:{mode:'anchor', anchor:0, n:3, fiTol:{'0-1':0.5,'1-2':0.8,'0-2':1.0},
+    single:{pts:[[[42.50,52.30,28.40],[42.80,52.90,28.10],[43.30,53.40,27.90]]], tol:{'0-1':[0.5],'1-2':[0.8],'0-2':[1.0]}, touched:false},
+    multi:{pts:SILVER, tol:{'0-1':[1.0,0.8,0.5,0.5,0.6],'1-2':[1.5,1.2,0.8,0.8,1.0],'0-2':[2.0,1.5,1.0,1.0,1.2]}, touched:false}},
+  mid:{mode:'all', t:50,
+    single:{pts:[[[42.50,52.30,28.40],[44.10,50.60,30.20]]], touched:false},
+    multi:{pts:[[[118.2,-0.6,1.2],[114.6,-0.4,2.0]],[[96.4,-0.5,0.9],[94.3,-0.4,1.5]],[[58.1,-0.3,0.4],[59.2,-0.3,0.8]],[[36.2,-0.2,-0.3],[37.6,-0.1,0]],[[30.5,-0.1,-0.8],[32.1,-0.1,-0.4]]], touched:false}}
 };
-const KEY='deltae-calc-v2';
+const clone=o=>JSON.parse(JSON.stringify(o));
+const KEY='deltae-calc-v3';
 let S=null;
 try{ S=JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
-if(!S||!S.single||!S.multi||!S.single.d1) S=JSON.parse(JSON.stringify(DEFAULT));
-['single','multi'].forEach(g=>{ if(!S[g].abs3) S[g].abs3=JSON.parse(JSON.stringify(DEFAULT[g].abs3)); });
+if(!S||!S.acc||!S.mid||!S.acc.multi||!S.acc.multi.pts||!S.mid.multi) S=clone(DEFAULT);
+if(location.hash==='#mid'||location.hash==='#acc') S.tab=location.hash.slice(1);
 function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} }
 
 const $=id=>document.getElementById(id);
 const f2=v=>Number.isFinite(v)?v.toFixed(2):'—';
 const sgn2=v=>Number.isFinite(v)?(v>0?'+':v<0?'−':'±')+Math.abs(v).toFixed(2):'—';
+const fmtIn=v=>String(+(+v).toFixed(4));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const cur=()=>S[S.geom];
 const angLabels=()=>S.geom==='single'?[S.singleLabel||'単一']:ANGLES;
-const hasAbs=()=>S.absMode!=='none';
-const effFormula=()=>hasAbs()?S.formula:'de76';
+const nAng=()=>S.geom==='single'?1:5;
+const accSt=()=>S.acc[S.geom], midSt=()=>S.mid[S.geom];
+const accHasAbs=()=>S.acc.mode!=='none';
+const effFormula=()=>(S.tab==='acc'&&!accHasAbs())?'de76':S.formula;
 const opts=()=>({p94:S.p94,k:S.k,cmc:S.cmc});
 
-// ---------- 入力表 ----------
-function groups(){ return S.absMode==='all'?['t0','t1','t2']:[...(hasAbs()?['abs']:[]),'d1','d2']; }
-// 列グループ g の r 行目の値（配列）を返す
-function cellArr(g,r){ const c=cur(); return g[0]==='t'?c.abs3[r][+g[1]]:c[g][r]; }
-function renderInputs(){
-  const L=angLabels(), c=cur(), G=groups();
-  const gname={abs:(S.absMode==='target'?'ターゲット':'承認塗板')+' 絶対値',d1:'差 1：承認塗板 − ターゲット',d2:'差 2：製品 − 承認塗板',t0:'ターゲット',t1:'承認塗板',t2:'製品'};
-  const LAB=['L*','a*','b*'], comp={abs:LAB,d1:['ΔL*','Δa*','Δb*'],d2:['ΔL*','Δa*','Δb*'],t0:LAB,t1:LAB,t2:LAB};
-  let h='<thead><tr><th></th>'+G.map((g,i)=>`<th colspan="3" class="grp${i?' sep':''}">${gname[g]}</th>`).join('')+'</tr><tr><th>'+(S.geom==='single'?'条件':'角度')+'</th>';
-  G.forEach((g,i)=>comp[g].forEach((t,j)=>h+=`<th${i&&!j?' class="sep"':''}>${t}</th>`));
+let toastTimer=0;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{t.hidden=true;},2600); }
+
+// ---------- 入力表（累積・中間色で共通） ----------
+// 列グループ：abs＝試料 s の L*a*b*、diff＝試料 i+1 − 試料 i の ΔL*Δa*Δb*
+function groupsFor(mode,n,anchor){
+  if(mode==='all') return [...Array(n)].map((_,s)=>({t:'abs',s}));
+  const g=mode==='anchor'?[{t:'abs',s:anchor}]:[];
+  for(let i=0;i<n-1;i++) g.push({t:'diff',i});
+  return g;
+}
+function getVal(row,g,c){ return g.t==='abs'?row[g.s][c]:row[g.i+1][c]-row[g.i][c]; }
+// 内部では全試料の座標を持ち、入力された値に合わせて座標を動かす
+function setVal(row,g,c,v,mode,anchor){
+  if(g.t==='abs'){
+    if(mode==='all') row[g.s][c]=v;
+    else { const d=v-row[g.s][c]; row.forEach(p=>{p[c]+=d;}); }   // 差を保ったまま全体を平行移動
+    return;
+  }
+  const d=v-(row[g.i+1][c]-row[g.i][c]), a=mode==='anchor'?anchor:0;
+  if(a<=g.i){ for(let s=g.i+1;s<row.length;s++) row[s][c]+=d; }  // 絶対値の試料より後ろを動かす
+  else { for(let s=0;s<=g.i;s++) row[s][c]-=d; }                  // 絶対値の試料より前を動かす
+}
+function ctx(key){
+  return key==='acc'?{pts:accSt().pts,n:S.acc.n,mode:S.acc.mode,anchor:S.acc.anchor,st:accSt()}
+                    :{pts:midSt().pts,n:2,mode:S.mid.mode,anchor:0,st:midSt()};
+}
+function buildIn(key,el){
+  const c=ctx(key), L=angLabels(), G=groupsFor(c.mode,c.n,c.anchor);
+  const gl=g=>g.t==='abs'?`<span class="dot" style="background:${sCol(g.s)}"></span>${LET[g.s]}${c.mode==='all'?'':' の絶対値'}`:`${LET[g.i+1]} − ${LET[g.i]}`;
+  const comp=g=>g.t==='abs'?['L*','a*','b*']:['ΔL*','Δa*','Δb*'];
+  let h='<thead><tr><th></th>'+G.map((g,i)=>`<th colspan="3" class="grp${i?' sep':''}">${gl(g)}</th>`).join('')+'</tr><tr><th>'+(S.geom==='single'?'条件':'角度')+'</th>';
+  G.forEach((g,i)=>comp(g).forEach((t,j)=>{h+=`<th${i&&!j?' class="sep"':''}>${t}</th>`;}));
   h+='</tr></thead><tbody>';
   L.forEach((a,r)=>{
     h+=`<tr><td class="ang">${esc(a)}</td>`;
-    G.forEach((g,gi)=>{ for(let k=0;k<3;k++) h+=`<td${gi&&!k?' class="sep"':''}><input class="cell${g==='abs'||g[0]==='t'?' abs':''}" id="in-${S.geom}-${g}-${r}-${k}" data-k="in" data-r="${r}" data-col="${gi*3+k}" inputmode="decimal" value="${cellArr(g,r)[k]}" aria-label="${esc(a)} ${gname[g]} ${comp[g][k]}"></td>`; });
+    G.forEach((g,gi)=>{ for(let k=0;k<3;k++){
+      const lab=(g.t==='abs'?LET[g.s]:`${LET[g.i+1]}−${LET[g.i]}`)+' '+comp(g)[k];
+      h+=`<td${gi&&!k?' class="sep"':''}><input class="cell${g.t==='abs'?' abs':''}" id="in-${key}-${S.geom}-${r}-${gi}-${k}" data-k="in" data-tab="${key}" data-r="${r}" data-col="${gi*3+k}" inputmode="decimal" value="${fmtIn(getVal(c.pts[r],g,k))}" aria-label="${esc(a)} ${lab}"></td>`;
+    } });
     h+='</tr>';
   });
-  $('tblIn').innerHTML=h+'</tbody>';
-  let t='<thead><tr><th style="text-align:left">ΔE 許容差</th>'+L.map(a=>`<th>${esc(a)}</th>`).join('')+'</tr></thead><tbody>';
-  PAIRS.forEach((p,i)=>{
-    t+=`<tr><td class="pname" style="color:${p.c}">${p.name}</td>`+L.map((_,j)=>`<td><input class="cell" style="width:4.2em" id="tol-${S.geom}-${i}-${j}" data-k="tol" data-r="${i}" data-col="${j}" inputmode="decimal" value="${c.tol[i][j]}" aria-label="${p.name} ${esc(L[j])} 許容差"></td>`).join('')+'</tr>';
-  });
-  $('tblTol').innerHTML=t+'</tbody>';
-  $('fiTolWrap').hidden=S.geom!=='multi';
-  $('tblFiTol').innerHTML='<thead><tr><th style="text-align:left">|ΔFI| 許容差</th>'+PAIRS.map(p=>`<th style="color:${p.c}">${p.name.replace(' → ','→')}</th>`).join('')+'</tr></thead><tbody><tr><td></td>'+
-    PAIRS.map((p,i)=>`<td><input class="cell" style="width:4.2em" id="fitol-${i}" data-k="fitol" data-r="0" data-col="${i}" inputmode="decimal" value="${S.multi.fiTol[i]}" aria-label="${p.name} ΔFI 許容差"></td>`).join('')+'</tr></tbody>';
-  $('inNote').textContent=S.absMode==='all'?'3 試料の L*a*b* から、承認塗板 − ターゲット、製品 − 承認塗板、製品 − ターゲット の差を計算します。':'差は「試料 − 基準」（測色計の表示と同じ向き）。差 1 は承認塗板 − ターゲット、差 2 は製品 − 承認塗板。';
-  $('sampleNote').textContent=c.touched?'':'※ 表示中の値は動作確認用の架空のサンプルです（'+(S.geom==='single'?'赤のソリッド塗装':'シルバーメタリック')+'を想定）。';
+  el.innerHTML=h+'</tbody>';
 }
+function buildAccTol(){
+  const L=angLabels(), P=pairsOf(S.acc.n), st=accSt(), fi=S.geom==='multi';
+  let t='<thead><tr><th style="text-align:left">組み合わせ</th>'+L.map(a=>`<th>ΔE ${esc(a)}</th>`).join('')+(fi?'<th class="sep">|ΔFI|</th>':'')+'</tr></thead><tbody>';
+  let kind='';
+  P.forEach((p,r)=>{
+    if(p.kind!==kind){ kind=p.kind; t+=`<tr class="sub"><td colspan="${L.length+2}">${kind==='step'?'各段（前の試料 → 次の試料）':'累積（A → 各試料）'}</td></tr>`; }
+    t+=`<tr><td class="pname" style="color:${p.c}">${p.name}</td>`+L.map((_,j)=>`<td><input class="cell" style="width:4.2em" id="tol-${S.geom}-${p.id}-${j}" data-k="tol" data-tab="acc" data-r="${r}" data-col="${j}" inputmode="decimal" value="${st.tol[p.id][j]}" aria-label="${p.name} ${esc(L[j])} 許容差"></td>`).join('')+
+      (fi?`<td class="sep"><input class="cell" style="width:4.2em" id="fitol-${p.id}" data-k="tol" data-tab="acc" data-r="${r}" data-col="${L.length}" inputmode="decimal" value="${S.acc.fiTol[p.id]}" aria-label="${p.name} ΔFI 許容差"></td>`:'')+'</tr>';
+  });
+  $('accTol').innerHTML=t+'</tbody>';
+}
+function renderInputs(){
+  buildIn('acc',$('accIn')); buildAccTol(); buildIn('mid',$('midIn'));
+  const n=S.acc.n;
+  $('nOut').textContent=`${n} 試料（A〜${LET[n-1]}）`;
+  $('nMinus').disabled=n<=NMIN; $('nPlus').disabled=n>=NMAX;
+  $('selAnchor').innerHTML=[...Array(n)].map((_,s)=>`<option value="${s}"${s===S.acc.anchor?' selected':''}>${LET[s]}</option>`).join('');
+  $('accInNote').textContent=S.acc.mode==='all'?'各試料の L*a*b* から、各段と A からの差を計算します。':'差は「後の試料 − 前の試料」（測色計の表示と同じ向き）で入れてください。';
+  const sample=(st,kind)=>st.touched?'':`※ 表示中の値は動作確認用の架空のサンプルです（${S.geom==='single'?'赤のソリッド塗装':'シルバーメタリック'}を想定）。`;
+  $('accSample').textContent=sample(accSt()); $('midSample').textContent=sample(midSt());
+  $('midT').value=S.mid.t; $('midTnum').value=S.mid.t;
+}
+function parseNum(s){ return parseFloat(String(s).replace(/[−–ー]/g,'-').replace(/,/g,'').trim()); }
 function onCell(el){
-  const v=parseFloat(String(el.value).replace(/[−–ー]/g,'-').replace(/,/g,'').trim());
-  const k=el.dataset.k, ok=Number.isFinite(v)&&(k==='in'||v>0);
+  const v=parseNum(el.value), k=el.dataset.k, ok=Number.isFinite(v)&&(k==='in'||v>0);
   el.classList.toggle('bad',!ok);
   if(!ok) return;
-  const r=+el.dataset.r, col=+el.dataset.col;
-  if(k==='in'){ const g=groups()[Math.floor(col/3)]; cellArr(g,r)[col%3]=v; }
-  else if(k==='tol') cur().tol[r][col]=v;
-  else S.multi.fiTol[col]=v;
-  cur().touched=true; $('sampleNote').textContent='';
+  const r=+el.dataset.r, col=+el.dataset.col, key=el.dataset.tab;
+  if(k==='in'){
+    const c=ctx(key), G=groupsFor(c.mode,c.n,c.anchor);
+    setVal(c.pts[r],G[Math.floor(col/3)],col%3,v,c.mode,c.anchor); c.st.touched=true;
+  }else{
+    const p=pairsOf(S.acc.n)[r];
+    if(col<nAng()) accSt().tol[p.id][col]=v; else S.acc.fiTol[p.id]=v;
+    accSt().touched=true;
+  }
+  (key==='acc'?$('accSample'):$('midSample')).textContent='';
 }
-document.addEventListener('input',e=>{ if(e.target.classList&&e.target.classList.contains('cell')){ onCell(e.target); update(); } });
+document.addEventListener('input',e=>{ const el=e.target; if(el.classList&&el.classList.contains('cell')&&el.dataset.k){ onCell(el); update(); } });
 // Excel からの範囲貼り付け
 document.addEventListener('paste',e=>{
   const el=e.target;
-  if(!el.classList||!el.classList.contains('cell')) return;
+  if(!el.classList||!el.classList.contains('cell')||!el.dataset.k) return;
   const txt=(e.clipboardData||window.clipboardData).getData('text');
   if(!/[\t\n]/.test(txt.trim())) return;
   e.preventDefault();
   const rows=txt.replace(/\r/g,'').replace(/\n+$/,'').split('\n').map(l=>l.split('\t'));
-  const r0=+el.dataset.r, c0=+el.dataset.col, k=el.dataset.k;
+  const r0=+el.dataset.r, c0=+el.dataset.col, k=el.dataset.k, tab=el.dataset.tab;
   rows.forEach((row,i)=>row.forEach((v,j)=>{
-    const t=document.querySelector(`input.cell[data-k="${k}"][data-r="${r0+i}"][data-col="${c0+j}"]`);
+    const t=document.querySelector(`input.cell[data-k="${k}"][data-tab="${tab}"][data-r="${r0+i}"][data-col="${c0+j}"]`);
     if(t){ t.value=v.trim(); onCell(t); }
   }));
   update();
 });
 
-// ---------- 計算 ----------
-// 差分と（あれば）絶対値から 3 試料の座標を組み立てる。絶対値なしはターゲットを原点とした相対座標
-function points(i){
-  const c=cur(), d1=c.d1[i], d2=c.d2[i], add=(a,b,s=1)=>a.map((v,k)=>v+s*b[k]);
-  let T,P;
-  if(S.absMode==='all') return c.abs3[i].map(v=>v.slice());
-  if(S.absMode==='target'){ T=c.abs[i].slice(); P=add(T,d1); }
-  else if(S.absMode==='panel'){ P=c.abs[i].slice(); T=add(P,d1,-1); }
-  else { T=[0,0,0]; P=d1.slice(); }
-  return [T,P,add(P,d2)];
+// 試料数の変更：増やすときは最後の試料を複製（差 0）、許容差は直前の組の値を引き継ぐ
+function ensureTol(){
+  const P=pairsOf(S.acc.n);
+  ['single','multi'].forEach(g=>{
+    const st=S.acc[g], len=g==='single'?1:5;
+    P.forEach(p=>{
+      if(!st.tol[p.id]){
+        const prev=p.kind==='step'?st.tol[`${p.a-1}-${p.a}`]:st.tol[`0-${p.b-1}`];
+        st.tol[p.id]=prev?prev.slice():Array(len).fill(1);
+      }
+    });
+  });
+  P.forEach(p=>{ if(!(S.acc.fiTol[p.id]>0)){ const prev=p.kind==='step'?S.acc.fiTol[`${p.a-1}-${p.a}`]:S.acc.fiTol[`0-${p.b-1}`]; S.acc.fiTol[p.id]=prev||1; } });
 }
-function compute(){
-  const c=cur(), f=effFormula();
+function setN(n){
+  n=Math.max(NMIN,Math.min(NMAX,n));
+  ['single','multi'].forEach(g=>{ S.acc[g].pts.forEach(row=>{ while(row.length<n) row.push(row[row.length-1].slice()); while(row.length>n) row.pop(); }); });
+  S.acc.n=n; if(S.acc.anchor>n-1) S.acc.anchor=n-1;
+  ensureTol();
+}
+
+// ---------- 計算 ----------
+// 累積：差のみのときは A を原点にした相対座標で扱う
+function accPoints(i){
+  const row=accSt().pts[i];
+  if(accHasAbs()) return row.map(p=>p.slice());
+  return row.map(p=>p.map((v,k)=>v-row[0][k]));
+}
+function computeAcc(){
+  const st=accSt(), f=effFormula(), P=pairsOf(S.acc.n);
   return angLabels().map((a,i)=>{
-    const lab=points(i);
-    const res=PAIRS.map((p,j)=>{ const r=deltaE(f,lab[p.ref],lab[p.smp],opts()); return {...r,tol:c.tol[j][i],ng:r.dE>c.tol[j][i]}; });
+    const lab=accPoints(i);
+    const res=P.map(p=>{ const r=deltaE(f,lab[p.a],lab[p.b],opts()); return {...r,p,tol:st.tol[p.id][i],ng:r.dE>st.tol[p.id][i]}; });
     return {ang:a,i,lab,res};
   });
 }
-function computeFI(R){
-  if(S.geom!=='multi'||!hasAbs()) return null;
-  const fi=[0,1,2].map(s=>flopIndex(R[0].lab[s][0],R[2].lab[s][0],R[4].lab[s][0]));
-  const d=PAIRS.map((p,j)=>{ const v=fi[p.smp]-fi[p.ref]; return {v,tol:S.multi.fiTol[j],ng:Math.abs(v)>S.multi.fiTol[j]}; });
+function computeAccFI(R){
+  if(S.geom!=='multi'||!accHasAbs()) return null;
+  const n=S.acc.n, fi=[...Array(n)].map((_,s)=>flopIndex(R[0].lab[s][0],R[2].lab[s][0],R[4].lab[s][0]));
+  const d=pairsOf(n).map(p=>{ const v=fi[p.b]-fi[p.a], tol=S.acc.fiTol[p.id]; return {p,v,tol,ng:Math.abs(v)>tol}; });
   return {fi,d};
 }
-
-// ---------- 描画：判定 ----------
-function renderSummary(R,FI){
-  const ng=[];
-  R.forEach(a=>a.res.forEach((r,j)=>{ if(r.ng) ng.push(`<div><b style="color:${PAIRS[j].c}">${PAIRS[j].name}</b>${R.length>1?' '+esc(a.ang):''}：ΔE <span class="num">${f2(r.dE)}</span> &gt; <span class="num">${f2(r.tol)}</span></div>`); }));
-  if(FI) FI.d.forEach((x,j)=>{ if(x.ng) ng.push(`<div><b style="color:${PAIRS[j].c}">${PAIRS[j].name}</b>：|ΔFI| <span class="num">${f2(Math.abs(x.v))}</span> &gt; <span class="num">${f2(x.tol)}</span></div>`); });
-  const b=$('banner'), f=FNAME[effFormula()];
-  if(!ng.length){
-    b.className='banner ok';
-    b.innerHTML=`<div class="big">合格</div><div class="body">全 3 組${R.length>1?'・全 5 角度':''}で許容差内です（${f}${FI?'、ΔFI 含む':''}）。</div>`;
-  }else{
-    b.className='banner ng';
-    b.innerHTML=`<div class="big">NG ${ng.length} 件</div><div class="body">${ng.join('')}</div>`;
-  }
-  $('cards').innerHTML=PAIRS.map((p,j)=>{
-    let w=R[0], wr=-1;
-    R.forEach(a=>{ const q=a.res[j].dE/a.res[j].tol; if(q>wr){wr=q;w=a;} });
-    const r=w.res[j], m=r.tol-r.dE;
-    const chip=r.ng?'<span class="chip ng">NG</span>':(r.dE>0.8*r.tol?'<span class="chip warn">余裕小</span>':'<span class="chip ok">OK</span>');
-    const minis=R.length>1?`<div class="minis">${R.map(a=>`<span class="mini${a.res[j].ng?' ng':''}">${esc(a.ang)} ${f2(a.res[j].dE)}</span>`).join('')}</div>`:'';
-    const fiLine=FI?`<div class="small">ΔFI <span class="num">${sgn2(FI.d[j].v)}</span> ${FI.d[j].ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</div>`:'';
-    return `<div class="card" style="--c:${p.c}">
-      <div class="route">${p.name}</div>
-      <div class="val"><span class="n">${f2(r.dE)}</span><span class="u">ΔE ${FNAME[effFormula()]}</span>${chip}</div>
-      <div class="small muted">${R.length>1?`最も厳しい角度 ${esc(w.ang)}・`:''}許容差 <span class="num">${f2(r.tol)}</span>・${m>=0?'余裕':'超過'} <span class="num">${f2(Math.abs(m))}</span></div>
-      ${minis}${fiLine}</div>`;
-  }).join('');
+function computeMid(){
+  const st=midSt(), f=S.formula, o=opts(), t=S.mid.t/100;
+  return angLabels().map((a,i)=>{
+    const A=st.pts[i][0], B=st.pts[i][1];
+    const m=midPoint(A,B,t,f,o), M=m.M, Mlab=A.map((v,k)=>v+t*(B[k]-v));
+    return {ang:a,i,A,B,M,s:m.s,dA:deltaE(f,M,A,o).dE,dB:deltaE(f,M,B,o).dE,dAB:deltaE(f,A,B,o).dE,dLin:cie76(Mlab,M).dE};
+  });
 }
 
-// ---------- 描画：角度別 ----------
+// ---------- 図の部品 ----------
 function niceStep(span,n){ const raw=span/n, p=Math.pow(10,Math.floor(Math.log10(raw))), m=raw/p; return (m<1.5?1:m<3?2:m<7?5:10)*p; }
-function renderAng(R){
-  const W=520,H=250,ml=40,mr=8,mt=18,mb=32, iw=W-ml-mr, ih=H-mt-mb;
-  let ymax=0; R.forEach(a=>a.res.forEach(r=>{ymax=Math.max(ymax,r.dE,r.tol);}));
-  ymax=ymax*1.12||1; const st=niceStep(ymax,5); ymax=Math.ceil(ymax/st)*st;
-  const y=v=>mt+ih-v/ymax*ih;
-  let g='';
-  for(let v=0;v<=ymax+1e-9;v+=st) g+=`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${ml-6}" y="${y(v)+4}" text-anchor="end" font-size="11" class="t-num">${+v.toFixed(3)}</text>`;
-  const gw=iw/R.length, bw=Math.min(26,gw/4.2);
-  R.forEach((a,i)=>{
-    const gx=ml+gw*i;
-    if(i===S.sel) g+=`<rect x="${gx+3}" y="${mt-6}" width="${gw-6}" height="${ih+6}" fill="var(--sunk)" rx="6"/>`;
-    a.res.forEach((r,j)=>{
-      const x=gx+gw/2+(j-1.5)*bw*1.15+bw*0.075;
-      g+=`<rect x="${x}" y="${y(r.dE)}" width="${bw}" height="${Math.max(0,y(0)-y(r.dE))}" fill="${PAIRS[j].c}" ${r.ng?'stroke="var(--ng)" stroke-width="2"':''} rx="2"/>`;
-      g+=`<line x1="${x-3}" x2="${x+bw+3}" y1="${y(r.tol)}" y2="${y(r.tol)}" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="3 2"/>`;
-      if(r.ng) g+=`<text x="${x+bw/2}" y="${Math.min(y(r.dE),y(r.tol))-4}" text-anchor="middle" font-size="10" font-weight="700" style="fill:var(--ng)">NG</text>`;
-    });
-    g+=`<text x="${gx+gw/2}" y="${H-10}" text-anchor="middle" font-size="12" class="t-num" style="fill:var(--ink)${i===S.sel?';font-weight:600':''}">${esc(a.ang)}</text>`;
-    g+=`<rect x="${gx}" y="0" width="${gw}" height="${H}" fill="transparent" style="cursor:pointer" data-sel="${i}"><title>${esc(a.ang)} を詳細表示</title></rect>`;
-  });
-  g+=`<text x="11" y="${mt+ih/2}" font-size="11" transform="rotate(-90 11 ${mt+ih/2})" text-anchor="middle">ΔE</text>`;
-  $('angChart').innerHTML=g;
-}
-$('angChart').addEventListener('click',e=>{ const t=e.target.closest('[data-sel]'); if(t){ S.sel=+t.dataset.sel; update(); } });
-
-// ---------- 描画：FI ----------
-function renderFI(R,FI){
-  const box=$('fiBox');
-  if(!FI){
-    box.innerHTML=`<div class="callout">FI は L*15°・L*45°・L*110° の絶対値から計算するため、差だけでは求められません。上の「手元のデータ」で絶対値を含む入力を選び、値を入れてください。</div>`;
-    return;
-  }
-  const W=360,H=122,ml=14,mr=14;
-  let lo=Math.min(...FI.fi), hi=Math.max(...FI.fi); const span=Math.max(hi-lo,2)*1.5, mid=(lo+hi)/2;
-  lo=mid-span/2; hi=mid+span/2;
-  const st=niceStep(span,5), x=v=>ml+(v-lo)/(hi-lo)*(W-ml-mr);
-  let g=`<line x1="${ml}" x2="${W-mr}" y1="58" y2="58" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>`;
-  for(let v=Math.ceil(lo/st)*st;v<=hi;v+=st) g+=`<line x1="${x(v)}" x2="${x(v)}" y1="64" y2="70" stroke="var(--muted)"/><text x="${x(v)}" y="82" font-size="10" text-anchor="middle" class="t-num">${+v.toFixed(2)}</text>`;
-  const order=[0,1,2].sort((a,b)=>FI.fi[a]-FI.fi[b]);
-  order.forEach((s,k)=>{
-    const xx=x(FI.fi[s]), ly=[14,112,30][k], anc=xx<70?'start':xx>W-70?'end':'middle';
-    g+=`<line x1="${xx}" x2="${xx}" y1="${k===1?58:ly+4}" y2="${k===1?ly-12:58}" stroke="${SCOL[s]}" stroke-width="1.2"/><circle cx="${xx}" cy="58" r="6" fill="${SCOL[s]}" stroke="var(--surface)" stroke-width="2"/>`;
-    g+=`<text x="${xx}" y="${ly}" font-size="11" text-anchor="${anc}" style="fill:${SCOL[s]};font-weight:700">${SAMPLES[s]} ${FI.fi[s].toFixed(2)}</text>`;
-  });
-  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="3試料のFI">${g}</svg>
-    <div class="fi-rows">${PAIRS.map((p,j)=>`<div class="fi-row" style="--c:${p.c}"><b>${p.name}</b><span class="num">ΔFI ${sgn2(FI.d[j].v)}</span>${FI.d[j].ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</div>`).join('')}</div>
-    <p class="note">ΔFI が＋は試料の方がフロップが強い（正面と斜めの明るさの差が大きい）、−は弱い。</p>`;
-}
-
-// ---------- 描画：詳細 ----------
+// 基準 ref の L* を固定した断面で ΔE = tol となる境界
 function contour(ref,tol){
-  // 基準の L* を固定した断面で ΔE = 許容差 となる境界
   const f=effFormula(), o=opts(), pts=[];
   for(let k=0;k<72;k++){
-    const th=k*5*RAD, cx=Math.cos(th), cy=Math.sin(th);
+    const th=k*5*Math.PI/180, cx=Math.cos(th), cy=Math.sin(th);
     const de=m=>deltaE(f,ref,[ref[0],ref[1]+m*cx,ref[2]+m*cy],o).dE;
     let lo=0, hi=tol*4+5;
     for(let it=0;it<20&&de(hi)<tol;it++) hi*=2;
@@ -607,6 +721,129 @@ function contour(ref,tol){
     pts.push([ref[1]+lo*cx, ref[2]+lo*cy]);
   }
   return pts;
+}
+// a*b* 平面：点（試料）、矢印、許容範囲の境界
+function drawAb(el,points,arrows,contours,rel){
+  const cs=contours.map(c=>({...c,poly:contour(c.center,c.tol)}));
+  const xs=[...points.map(p=>p.lab[1]),...cs.flatMap(c=>c.poly.map(q=>q[0]))], ys=[...points.map(p=>p.lab[2]),...cs.flatMap(c=>c.poly.map(q=>q[1]))];
+  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const span=Math.max(x1-x0,y1-y0,1)*1.12, cx=(x0+x1)/2, cy=(y0+y1)/2;
+  const W=360,m=34,iw=W-m*2, st=niceStep(span,6), ax0=cx-span/2, ay0=cy-span/2;
+  const X=v=>m+(v-ax0)/span*iw, Y=v=>m+iw-(v-ay0)/span*iw, pre=rel?'Δ':'', R=7;
+  let g=`<defs>${arrows.map((a,i)=>`<marker id="${el.id}-ar${i}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="${a.c}"/></marker>`).join('')}</defs>`;
+  g+=`<rect x="${m}" y="${m}" width="${iw}" height="${iw}" fill="var(--bg)" stroke="var(--line)"/>`;
+  for(let v=Math.ceil(ax0/st)*st; v<=ax0+span; v+=st) g+=`<line x1="${X(v)}" x2="${X(v)}" y1="${m}" y2="${m+iw}" stroke="var(--line)" stroke-width="${Math.abs(v)<1e-9?1.6:0.6}"/><text x="${X(v)}" y="${m+iw+14}" font-size="10" text-anchor="middle" class="t-num">${+v.toFixed(3)}</text>`;
+  for(let v=Math.ceil(ay0/st)*st; v<=ay0+span; v+=st) g+=`<line x1="${m}" x2="${m+iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${Math.abs(v)<1e-9?1.6:0.6}"/><text x="${m-4}" y="${Y(v)+3}" font-size="10" text-anchor="end" class="t-num">${+v.toFixed(3)}</text>`;
+  g+=`<text x="${m+iw}" y="${m-8}" font-size="11" text-anchor="end">+${pre}b* 黄み ↑</text><text x="${m}" y="${m-8}" font-size="11">↓ −${pre}b* 青み</text>`;
+  g+=`<text x="${m+iw+6}" y="${m+iw/2}" font-size="11" transform="rotate(90 ${m+iw+6} ${m+iw/2})" text-anchor="middle">+${pre}a* 赤み →</text>`;
+  g+=`<text x="${m-24}" y="${m+iw/2}" font-size="11" transform="rotate(-90 ${m-24} ${m+iw/2})" text-anchor="middle">← −${pre}a* 緑み</text>`;
+  cs.forEach(c=>{ g+=`<polygon points="${c.poly.map(p=>X(p[0])+','+Y(p[1])).join(' ')}" fill="${c.c}" fill-opacity=".09" stroke="${c.c}" stroke-width="1.4" stroke-dasharray="5 3"/>`; });
+  arrows.forEach((a,i)=>{
+    const p0=[X(a.from[1]),Y(a.from[2])], p1=[X(a.to[1]),Y(a.to[2])], L=Math.hypot(p1[0]-p0[0],p1[1]-p0[1]);
+    if(L<2*R+6) return;
+    const ux=(p1[0]-p0[0])/L, uy=(p1[1]-p0[1])/L;
+    g+=`<line x1="${p0[0]+ux*R}" y1="${p0[1]+uy*R}" x2="${p1[0]-ux*(R+2)}" y2="${p1[1]-uy*(R+2)}" stroke="${a.c}" stroke-width="${a.dash?1.8:2.4}" ${a.dash?'stroke-dasharray="6 4"':''} marker-end="url(#${el.id}-ar${i})"/>`;
+  });
+  points.forEach(p=>{ g+=`<circle cx="${X(p.lab[1])}" cy="${Y(p.lab[2])}" r="${R}" fill="${rel?p.c:rgbCss(p.lab)}" stroke="var(--ink)" stroke-width="1.5"/>`; });
+  // ラベルは点の右側。縦に 15px 以上離し、ずらしたものは引き出し線でつなぐ
+  const lb=points.map(p=>({p,x:X(p.lab[1]),y:Y(p.lab[2])})).sort((a,b)=>a.y-b.y);
+  lb.forEach((o,k)=>{ o.ly=o.y+4; if(k&&o.ly-lb[k-1].ly<15) o.ly=lb[k-1].ly+15; });
+  const right=Math.max(...lb.map(o=>o.x));
+  lb.forEach(o=>{
+    const moved=Math.abs(o.ly-4-o.y)>2, tx=Math.min((moved?right:o.x)+14,m+iw-22);
+    if(moved) g+=`<line x1="${o.x+R}" y1="${o.y}" x2="${tx-3}" y2="${o.ly-4}" stroke="var(--muted)" stroke-width="0.8"/>`;
+    g+=`<text x="${tx}" y="${o.ly}" font-size="13" font-weight="700" style="fill:${o.p.c};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${o.p.name}</text>`;
+  });
+  el.innerHTML=g;
+}
+// L* の比較：縦の帯に各試料の L* を刻む
+function drawL(el,items,rel){
+  const m=34, iw=292, Ls=items.map(o=>o.L), l0=Math.min(...Ls), l1=Math.max(...Ls), sp=Math.max(l1-l0,1)*1.4, lc=(l0+l1)/2;
+  const Y=v=>m+iw-(v-(lc-sp/2))/sp*iw;
+  let h=`<rect x="22" y="${m}" width="22" height="${iw}" rx="4" fill="var(--sunk)"/><text x="33" y="${m-8}" font-size="11" text-anchor="middle">${rel?'ΔL*':'L*'}</text><text x="33" y="${m+iw+14}" font-size="10" text-anchor="middle">↑明 ↓暗</text>`;
+  const lb=items.map(o=>({o,y:Y(o.L)})).sort((a,b)=>a.y-b.y);
+  lb.forEach((q,k)=>{ q.ly=q.y; if(k&&q.ly-lb[k-1].ly<13) q.ly=lb[k-1].ly+13; });
+  lb.forEach(q=>{
+    h+=`<line x1="18" x2="48" y1="${q.y}" y2="${q.y}" stroke="${q.o.c}" stroke-width="3"/><line x1="48" y1="${q.y}" x2="54" y2="${q.ly}" stroke="${q.o.c}" stroke-width="1"/>`;
+    h+=`<text x="57" y="${q.ly+4}" font-size="11" class="t-num" style="fill:${q.o.c};font-weight:600">${q.o.name} ${rel?sgn2(q.o.L):q.o.L.toFixed(2)}</text>`;
+  });
+  el.innerHTML=h;
+}
+// 数直線上の FI
+function drawFiLine(items){
+  const W=360,H=132,ml=16,mr=16;
+  let lo=Math.min(...items.map(o=>o.v)), hi=Math.max(...items.map(o=>o.v)); const span=Math.max(hi-lo,2)*1.5, mid=(lo+hi)/2;
+  lo=mid-span/2; hi=mid+span/2;
+  const st=niceStep(span,5), x=v=>ml+(v-lo)/(hi-lo)*(W-ml-mr);
+  let g=`<line x1="${ml}" x2="${W-mr}" y1="62" y2="62" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>`;
+  for(let v=Math.ceil(lo/st)*st;v<=hi;v+=st) g+=`<line x1="${x(v)}" x2="${x(v)}" y1="68" y2="74" stroke="var(--muted)"/><text x="${x(v)}" y="86" font-size="10" text-anchor="middle" class="t-num">${+v.toFixed(2)}</text>`;
+  const levels=[14,106,32,124,50];
+  items.slice().sort((a,b)=>a.v-b.v).forEach((o,k)=>{
+    const xx=x(o.v), ly=levels[k%levels.length], up=ly<62, anc=xx<70?'start':xx>W-70?'end':'middle';
+    g+=`<line x1="${xx}" x2="${xx}" y1="${up?ly+4:62}" y2="${up?62:ly-12}" stroke="${o.c}" stroke-width="1.2"/><circle cx="${xx}" cy="62" r="6" fill="${o.c}" stroke="var(--surface)" stroke-width="2"/>`;
+    g+=`<text x="${xx}" y="${ly}" font-size="11" text-anchor="${anc}" style="fill:${o.c};font-weight:700">${o.name} ${o.v.toFixed(2)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="フロップインデックス">${g}</svg>`;
+}
+function angTabs(el,R){
+  el.innerHTML=R.length>1?`<div class="seg" role="group" aria-label="角度を選ぶ">${R.map((x,i)=>`<button type="button" data-sel="${i}" aria-pressed="${i===S.sel}">${esc(x.ang)}</button>`).join('')}</div>`:'';
+}
+const legend=items=>items.map(o=>`<span style="--c:${o.c}"><i${o.dash?' class="dash"':''}></i>${o.name}</span>`).join('');
+
+// ---------- 描画：累積 ----------
+function renderAccSummary(R,FI){
+  const ng=[];
+  R.forEach(a=>a.res.forEach(r=>{ if(r.ng) ng.push(`<div><b style="color:${r.p.c}">${r.p.name}</b>${R.length>1?' '+esc(a.ang):''}：ΔE <span class="num">${f2(r.dE)}</span> &gt; <span class="num">${f2(r.tol)}</span></div>`); }));
+  if(FI) FI.d.forEach(x=>{ if(x.ng) ng.push(`<div><b style="color:${x.p.c}">${x.p.name}</b>：|ΔFI| <span class="num">${f2(Math.abs(x.v))}</span> &gt; <span class="num">${f2(x.tol)}</span></div>`); });
+  const b=$('accBanner'), f=FNAME[effFormula()], np=R[0].res.length;
+  if(!ng.length){ b.className='banner ok'; b.innerHTML=`<div class="big">合格</div><div class="body">全 ${np} 組${R.length>1?'・全 5 角度':''}で許容差内です（${f}${FI?'、ΔFI 含む':''}）。</div>`; }
+  else { b.className='banner ng'; b.innerHTML=`<div class="big">NG ${ng.length} 件</div><div class="body">${ng.join('')}</div>`; }
+  const card=j=>{
+    let w=R[0], wr=-1;
+    R.forEach(a=>{ const q=a.res[j].dE/a.res[j].tol; if(q>wr){wr=q;w=a;} });
+    const r=w.res[j], m=r.tol-r.dE, p=r.p;
+    const chip=r.ng?'<span class="chip ng">NG</span>':(r.dE>0.8*r.tol?'<span class="chip warn">余裕小</span>':'<span class="chip ok">OK</span>');
+    const minis=R.length>1?`<div class="minis">${R.map(a=>`<span class="mini${a.res[j].ng?' ng':''}">${esc(a.ang)} ${f2(a.res[j].dE)}</span>`).join('')}</div>`:'';
+    const fi=FI?FI.d[j]:null;
+    return `<div class="card" style="--c:${p.c}"><div class="route">${p.name}</div>
+      <div class="val"><span class="n">${f2(r.dE)}</span><span class="u">ΔE ${f}</span>${chip}</div>
+      <div class="small muted">${R.length>1?`最も厳しい角度 ${esc(w.ang)}・`:''}許容差 <span class="num">${f2(r.tol)}</span>・${m>=0?'余裕':'超過'} <span class="num">${f2(Math.abs(m))}</span></div>
+      ${minis}${fi?`<div class="small">ΔFI <span class="num">${sgn2(fi.v)}</span> ${fi.ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</div>`:''}</div>`;
+  };
+  const P=R[0].res.map(r=>r.p), idx=k=>P.map((p,j)=>p.kind===k?j:-1).filter(j=>j>=0);
+  const grp=(title,js)=>js.length?`<div class="cardgroup"><span class="lbl">${title}</span><div class="cards">${js.map(card).join('')}</div></div>`:'';
+  $('accCards').innerHTML=grp('各段（前の試料 → 次の試料）',idx('step'))+grp('累積（A → 各試料）',idx('cum'));
+}
+function renderAccAng(R){
+  const W=520,H=250,ml=40,mr=8,mt=18,mb=32, iw=W-ml-mr, ih=H-mt-mb, np=R[0].res.length;
+  let ymax=0; R.forEach(a=>a.res.forEach(r=>{ymax=Math.max(ymax,r.dE,r.tol);}));
+  ymax=ymax*1.12||1; const st=niceStep(ymax,5); ymax=Math.ceil(ymax/st)*st;
+  const y=v=>mt+ih-v/ymax*ih;
+  let g='';
+  for(let v=0;v<=ymax+1e-9;v+=st) g+=`<line x1="${ml}" x2="${W-mr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${ml-6}" y="${y(v)+4}" text-anchor="end" font-size="11" class="t-num">${+v.toFixed(3)}</text>`;
+  const gw=iw/R.length, bw=Math.min(24,(gw-12)/np);
+  R.forEach((a,i)=>{
+    const gx=ml+gw*i, x0=gx+(gw-bw*np)/2;
+    if(i===S.sel) g+=`<rect x="${gx+3}" y="${mt-6}" width="${gw-6}" height="${ih+6}" fill="var(--sunk)" rx="6"/>`;
+    a.res.forEach((r,j)=>{
+      const x=x0+j*bw+bw*0.08, w=bw*0.84;
+      g+=`<rect x="${x}" y="${y(r.dE)}" width="${w}" height="${Math.max(0,y(0)-y(r.dE))}" fill="${r.p.c}" ${r.ng?'stroke="var(--ng)" stroke-width="2"':''} rx="2"/>`;
+      g+=`<line x1="${x-1.5}" x2="${x+w+1.5}" y1="${y(r.tol)}" y2="${y(r.tol)}" stroke="var(--ink)" stroke-width="1.6" stroke-dasharray="3 2"/>`;
+      if(r.ng) g+=`<text x="${x+w/2}" y="${Math.min(y(r.dE),y(r.tol))-4}" text-anchor="middle" font-size="10" font-weight="700" style="fill:var(--ng)">NG</text>`;
+    });
+    g+=`<text x="${gx+gw/2}" y="${H-10}" text-anchor="middle" font-size="12" class="t-num" style="fill:var(--ink)${i===S.sel?';font-weight:600':''}">${esc(a.ang)}</text>`;
+    g+=`<rect x="${gx}" y="0" width="${gw}" height="${H}" fill="transparent" style="cursor:pointer" data-sel="${i}"><title>${esc(a.ang)} を詳細表示</title></rect>`;
+  });
+  g+=`<text x="11" y="${mt+ih/2}" font-size="11" transform="rotate(-90 11 ${mt+ih/2})" text-anchor="middle">ΔE</text>`;
+  $('accAng').innerHTML=g;
+  $('accAngLegend').innerHTML=legend(R[0].res.map(r=>r.p));
+}
+function renderAccFI(FI){
+  const n=S.acc.n;
+  if(!FI){ $('accFi').innerHTML='<div class="callout">FI は L*15°・L*45°・L*110° の絶対値から計算するため、差だけでは求められません。「手元のデータ」で絶対値を含む入力を選び、値を入れてください。</div>'; return; }
+  $('accFi').innerHTML=drawFiLine(FI.fi.map((v,s)=>({v,name:LET[s],c:sCol(s)})))+
+    `<div class="fi-rows">${FI.d.map(x=>`<div class="fi-row" style="--c:${x.p.c}"><b>${x.p.name}</b><span class="num">ΔFI ${sgn2(x.v)}</span>${x.ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</div>`).join('')}</div>
+    <p class="note">ΔFI が＋は後の試料の方がフロップが強い（正面と斜めの明るさの差が大きい）、−は弱い。</p>`;
 }
 function words(r,abs){
   const deg=v=>{const x=Math.abs(v); return x<0.3?'わずかに':x<1.0?'やや':'はっきり';};
@@ -617,161 +854,182 @@ function words(r,abs){
   if(Math.abs(r.db)>=th) w.push(`${deg(r.db)}${r.db>0?'黄み':'青み'}寄り`);
   return w.length?w:['ほぼ同じ色'];
 }
-function renderDetail(R){
-  const a=R[Math.min(S.sel,R.length-1)], lab=a.lab, res=a.res, abs=hasAbs(), f=effFormula();
-  $('detailTitle').textContent='詳細'+(R.length>1?'：'+a.ang:'');
-  $('angTabs').innerHTML=R.length>1?`<div class="seg" role="group" aria-label="角度を選ぶ">${R.map((x,i)=>`<button type="button" data-sel="${i}" aria-pressed="${i===a.i}">${esc(x.ang)}</button>`).join('')}</div>`:'';
-  // 色見本
-  $('swBox').innerHTML=abs?`<div class="sw">${lab.map((l,i)=>{ const c=lab2rgb(...l); return `<div style="background:rgb(${c})">${''}<span style="color:${l[0]>55?'#111':'#f4f4f4'}">${SAMPLES[i]}</span></div>`; }).join('')}</div><p class="note" style="margin-top:6px">色見本は L*a*b*（D65 前提）を sRGB に変換した目安です。メタリック感や L*&gt;100 の明るさは画面では再現できません。</p>`:'';
-  // a*b* 平面
-  $('abTitle').textContent=abs?'色の地図（a*b* 平面）と明るさ（L*）':'色の地図（ターゲットを原点にした Δa*Δb*）と明るさの差（ΔL*）';
-  const cT=contour(lab[0],res[2].tol), cP=contour(lab[1],res[1].tol);
-  const xs=[...lab.map(l=>l[1]),...cT.map(p=>p[0]),...cP.map(p=>p[0])], ys=[...lab.map(l=>l[2]),...cT.map(p=>p[1]),...cP.map(p=>p[1])];
-  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
-  const span=Math.max(x1-x0,y1-y0,1)*1.12, cx=(x0+x1)/2, cy=(y0+y1)/2;
-  const W=360,m=34,iw=W-m*2, st=niceStep(span,6), ax0=cx-span/2, ay0=cy-span/2;
-  const X=v=>m+(v-ax0)/span*iw, Y=v=>m+iw-(v-ay0)/span*iw;
-  const pre=abs?'':'Δ';
-  let g=`<defs>${PAIRS.map(p=>`<marker id="ar-${p.id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="${p.c}"/></marker>`).join('')}</defs>`;
-  g+=`<rect x="${m}" y="${m}" width="${iw}" height="${iw}" fill="var(--bg)" stroke="var(--line)"/>`;
-  for(let v=Math.ceil(ax0/st)*st; v<=ax0+span; v+=st) g+=`<line x1="${X(v)}" x2="${X(v)}" y1="${m}" y2="${m+iw}" stroke="var(--line)" stroke-width="${Math.abs(v)<1e-9?1.6:0.6}"/><text x="${X(v)}" y="${m+iw+14}" font-size="10" text-anchor="middle" class="t-num">${+v.toFixed(3)}</text>`;
-  for(let v=Math.ceil(ay0/st)*st; v<=ay0+span; v+=st) g+=`<line x1="${m}" x2="${m+iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${Math.abs(v)<1e-9?1.6:0.6}"/><text x="${m-4}" y="${Y(v)+3}" font-size="10" text-anchor="end" class="t-num">${+v.toFixed(3)}</text>`;
-  g+=`<text x="${m+iw}" y="${m-8}" font-size="11" text-anchor="end">+${pre}b* 黄み ↑</text><text x="${m}" y="${m-8}" font-size="11">↓ −${pre}b* 青み</text>`;
-  g+=`<text x="${m+iw+6}" y="${m+iw/2}" font-size="11" transform="rotate(90 ${m+iw+6} ${m+iw/2})" text-anchor="middle">+${pre}a* 赤み →</text>`;
-  g+=`<text x="${m-24}" y="${m+iw/2}" font-size="11" transform="rotate(-90 ${m-24} ${m+iw/2})" text-anchor="middle">← −${pre}a* 緑み</text>`;
-  const poly=(ps,c)=>`<polygon points="${ps.map(p=>X(p[0])+','+Y(p[1])).join(' ')}" fill="${c}" fill-opacity=".09" stroke="${c}" stroke-width="1.4" stroke-dasharray="5 3"/>`;
-  g+=poly(cT,'var(--tt)')+poly(cP,'var(--pp)');
-  const line=(i,j,p,dash)=>{ const len=Math.hypot(X(lab[j][1])-X(lab[i][1]),Y(lab[j][2])-Y(lab[i][2])); return len<3?'':`<line x1="${X(lab[i][1])}" y1="${Y(lab[i][2])}" x2="${X(lab[j][1])}" y2="${Y(lab[j][2])}" stroke="${p.c}" stroke-width="2.2" ${dash?'stroke-dasharray="6 4"':''} marker-end="url(#ar-${p.id})"/>`; };
-  g+=line(0,2,PAIRS[2],true)+line(0,1,PAIRS[0])+line(1,2,PAIRS[1]);
-  lab.forEach((l,i)=>{ const fill=abs?`rgb(${lab2rgb(...l)})`:SCOL[i]; g+=`<circle cx="${X(l[1])}" cy="${Y(l[2])}" r="7" fill="${fill}" stroke="var(--ink)" stroke-width="1.5"/>`; });
-  // ラベルは点の右側に置き、互いに 15px 以上離す（近いときは引き出し線）
-  const lb=[0,1,2].map(i=>({i,x:X(lab[i][1]),y:Y(lab[i][2]),ly:Y(lab[i][2])+4})).sort((p,q)=>p.y-q.y);
-  for(let k=1;k<3;k++) if(lb[k].ly-lb[k-1].ly<15) lb[k].ly=lb[k-1].ly+15;
-  const rightMost=Math.max(...lb.map(o=>o.x));
-  lb.forEach(o=>{ const near=Math.abs(o.ly-4-o.y)>2; const tx=Math.min((near?rightMost:o.x)+14, m+iw-60);
-    if(near) g+=`<line x1="${o.x+7}" y1="${o.y}" x2="${tx-3}" y2="${o.ly-4}" stroke="var(--muted)" stroke-width="0.8"/>`;
-    g+=`<text x="${tx}" y="${o.ly}" font-size="12" font-weight="700" style="fill:${SCOL[o.i]};paint-order:stroke;stroke:var(--bg);stroke-width:3px">${SAMPLES[o.i]}</text>`; });
-  $('abChart').innerHTML=g;
-  $('contourNote').textContent=`破線の囲み：ターゲット中心が「製品の許容範囲」（桃）、承認塗板中心が「製品の対承認塗板の許容範囲」（橙）。L* が基準と同じ場合の断面なので、L* のずれは右の図で確認してください。${f==='de76'?'CIE76 なので円になります。':FNAME[f]+' なので楕円状になります。'}`;
-  // L* 図
-  const Ls=lab.map(l=>l[0]), l0=Math.min(...Ls), l1=Math.max(...Ls), lsp=Math.max(l1-l0,1)*1.4, lc=(l0+l1)/2;
-  const LY=v=>m+iw-(v-(lc-lsp/2))/lsp*iw;
-  let h=`<rect x="49" y="${m}" width="22" height="${iw}" rx="4" fill="var(--sunk)"/><text x="60" y="${m-8}" font-size="11" text-anchor="middle">${abs?'L*':'ΔL*'}</text><text x="60" y="${m+iw+14}" font-size="10" text-anchor="middle">↑明 ↓暗</text>`;
-  const ord=[0,1,2].sort((p,q)=>Ls[q]-Ls[p]);
-  ord.forEach((i,k)=>{ const yy=LY(Ls[i]); const right=k===1; h+=`<line x1="45" x2="75" y1="${yy}" y2="${yy}" stroke="${SCOL[i]}" stroke-width="3"/><text x="${right?77:43}" y="${yy+(k===0?-3:k===2?11:4)}" font-size="10" text-anchor="${right?'start':'end'}" class="t-num" style="fill:${SCOL[i]}">${abs?Ls[i].toFixed(2):sgn2(Ls[i])}</text>`; });
-  $('lChart').innerHTML=h;
-  // 累積
-  const e1=res[0].dE, e2=res[1].dE, e3=res[2].dE, tolT=res[2].tol, sum=e1+e2, rss=Math.hypot(e1,e2);
-  const v1=[0,1,2].map(k=>lab[1][k]-lab[0][k]), v2=[0,1,2].map(k=>lab[2][k]-lab[1][k]);
-  const n1=Math.hypot(...v1), n2=Math.hypot(...v2);
-  const cos=n1>1e-9&&n2>1e-9?(v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])/(n1*n2):NaN;
-  const ang=Number.isFinite(cos)?Math.acos(Math.max(-1,Math.min(1,cos)))/RAD:NaN;
-  const vmax=Math.max(sum,e3,tolT)*1.08||1, pc=v=>(v/vmax*100).toFixed(2)+'%';
-  const row=(name,inner,val)=>`<div class="arow"><span>${name}</span><div class="track">${inner}<span class="tolline" style="left:${pc(tolT)}" title="許容差 ${f2(tolT)}"></span></div><span class="num" style="text-align:right">${f2(val)}</span></div>`;
-  let say;
-  if(!Number.isFinite(cos)||Math.min(e1,e2)<0.02) say='どちらかの段のずれがほぼゼロなので、製品の色差はもう一方の段のずれでほぼ決まります。';
-  else if(cos>0.5) say=`承認塗板のずれと製品のずれが<b>同じ向き</b>（なす角 ${ang.toFixed(0)}°）なので、色差が<b>積み上がって</b>います。`;
-  else if(cos<-0.5) say=`承認塗板のずれと製品のずれが<b>逆向き</b>（なす角 ${ang.toFixed(0)}°）なので、<b>打ち消し合って</b>小さくなっています。`;
-  else say=`ずれの向きが異なる（なす角 ${ang.toFixed(0)}°）ため、単純加算ほどには積み上がっていません。`;
-  const ratio=sum>0?e3/sum*100:0, budget=res[0].tol+res[1].tol;
-  $('acc').innerHTML=`<h3>色差の積み上がり</h3>
-    ${row('単純加算（最悪）',`<span class="seg1" style="left:0;width:${pc(e1)};background:var(--tp);border-radius:4px 0 0 4px"></span><span class="seg2" style="left:${pc(e1)};width:${pc(e2)};background:var(--pp);border-radius:0 4px 4px 0"></span>`,sum)}
-    ${row('二乗和平方根',`<span class="bar" style="left:0;width:${pc(rss)};background:var(--muted);opacity:.5;border-radius:4px"></span>`,rss)}
-    ${row('<b>実際</b> T → 製品',`<span class="bar" style="left:0;width:${pc(e3)};background:var(--tt);border-radius:4px"></span>`,e3)}
-    <div class="says">${say} 実際の色差は単純加算の <b class="num">${ratio.toFixed(0)}%</b>${e3>tolT?`、許容差 ${f2(tolT)} を <b style="color:var(--ng)">${f2(e3-tolT)} 超過</b>`:`、許容差 ${f2(tolT)} まで残り ${f2(tolT-e3)}`}。</div>
-    ${budget>tolT+1e-9?`<div class="says warn">許容差の配分：承認塗板 ${f2(res[0].tol)} ＋ 製品（対承認塗板）${f2(res[1].tol)} ＝ ${f2(budget)} が、製品（対ターゲット）の許容差 ${f2(tolT)} を超えています。両段とも合格でも、同じ向きにずれると最終的に NG になり得ます。</div>`:''}`;
-  // 成分分解
-  const useAB=!abs;
-  const lbl=useAB?['ΔL*','Δa*','Δb*']:(f==='de76'?['ΔL*','ΔC*','ΔH*']:['明度項','彩度項','色相項']);
-  const vals=r=>useAB?[r.dL,r.da,r.db]:[r.tL,r.tC,r.tH];
-  let cmax=0; res.forEach(r=>vals(r).forEach(v=>cmax=Math.max(cmax,Math.abs(v)))); cmax=cmax||1;
+function renderAccDetail(R){
+  const a=R[Math.min(S.sel,R.length-1)], lab=a.lab, res=a.res, abs=accHasAbs(), f=effFormula(), n=S.acc.n;
+  const byId=id=>res.find(r=>r.p.id===id), steps=res.filter(r=>r.p.kind==='step'), fin=byId(finalId(n));
+  $('accDetailTitle').textContent='詳細'+(R.length>1?'：'+a.ang:'');
+  angTabs($('accAngTabs'),R);
+  $('accSw').innerHTML=abs?`<div class="sw">${lab.map((l,s)=>`<div style="background:${rgbCss(l)};color:${inkOn(l)}">${LET[s]}</div>`).join('')}</div><p class="note" style="margin-top:6px">色見本は L*a*b*（D65 前提）を sRGB に変換した目安です。メタリック感や L*&gt;100 の明るさは画面では再現できません。</p>`:'';
+  $('accAbTitle').textContent=abs?'色の地図（a*b* 平面）と明るさ（L*）':'色の地図（A を原点にした Δa*Δb*）と明るさの差（ΔL*）';
+  const pts=lab.map((l,s)=>({lab:l,name:LET[s],c:sCol(s)}));
+  const arrows=steps.map(r=>({from:lab[r.p.a],to:lab[r.p.b],c:r.p.c}));
+  if(n>=3) arrows.unshift({from:lab[0],to:lab[n-1],c:fin.p.c,dash:true});
+  const cont=[{center:lab[0],tol:fin.tol,c:fin.p.c}];
+  if(n>=3){ const ls=byId(`${n-2}-${n-1}`); cont.push({center:lab[n-2],tol:ls.tol,c:ls.p.c}); }
+  drawAb($('accAb'),pts,arrows,cont,!abs);
+  drawL($('accL'),lab.map((l,s)=>({L:l[0],name:LET[s],c:sCol(s)})),!abs);
+  $('accAbLegend').innerHTML=legend([...steps.map(r=>r.p),...(n>=3?[{name:fin.p.name,c:fin.p.c,dash:true}]:[])]);
+  $('accContourNote').textContent=`破線の囲み：A 中心が「${fin.p.name} の許容範囲」${n>=3?`、${LET[n-2]} 中心が「${LET[n-2]} → ${LET[n-1]} の許容範囲」`:''}。L* が基準と同じ場合の断面なので、L* のずれは右の図で確認してください。${f==='de76'?'CIE76 なので円になります。':FNAME[f]+' なので楕円状になります。'}`;
+  // 色差の積み上がり
+  if(n<3){
+    $('accAcc').innerHTML='<h3>色差の積み上がり</h3><div class="says">試料が 2 つなので段は 1 つです。試料を増やすと、段ごとの色差がどう積み上がるかを表示します。</div>';
+  }else{
+    const es=steps.map(r=>r.dE), sum=es.reduce((s,v)=>s+v,0), rss=Math.hypot(...es), act=fin.dE, tolT=fin.tol;
+    const vmax=Math.max(sum,act,tolT)*1.08||1, pc=v=>(v/vmax*100).toFixed(2)+'%';
+    const row=(name,inner,val)=>`<div class="arow"><span>${name}</span><div class="track">${inner}<span class="tolline" style="left:${pc(tolT)}" title="許容差 ${f2(tolT)}"></span></div><span class="num" style="text-align:right">${f2(val)}</span></div>`;
+    let acc=0; const stack=steps.map((r,k)=>{ const s=`<span class="bar" style="left:${pc(acc)};width:${pc(r.dE)};background:${r.p.c};${k===0?'border-radius:4px 0 0 4px;':''}${k===steps.length-1?'border-radius:0 4px 4px 0;':''}"></span>`; acc+=r.dE; return s; }).join('');
+    const vs=steps.map(r=>[0,1,2].map(k=>lab[r.p.b][k]-lab[r.p.a][k])), norms=vs.map(v=>Math.hypot(...v));
+    let say;
+    if(steps.length===2){
+      const cos=norms[0]>1e-9&&norms[1]>1e-9?(vs[0][0]*vs[1][0]+vs[0][1]*vs[1][1]+vs[0][2]*vs[1][2])/(norms[0]*norms[1]):NaN;
+      const ang=Number.isFinite(cos)?Math.acos(Math.max(-1,Math.min(1,cos)))*180/Math.PI:NaN;
+      if(!Number.isFinite(cos)||Math.min(...es)<0.02) say='どちらかの段のずれがほぼゼロなので、累積の色差はもう一方の段のずれでほぼ決まります。';
+      else if(cos>0.5) say=`2 つの段のずれが<b>同じ向き</b>（なす角 ${ang.toFixed(0)}°）なので、色差が<b>積み上がって</b>います。`;
+      else if(cos<-0.5) say=`2 つの段のずれが<b>逆向き</b>（なす角 ${ang.toFixed(0)}°）なので、<b>打ち消し合って</b>小さくなっています。`;
+      else say=`ずれの向きが異なる（なす角 ${ang.toFixed(0)}°）ため、単純加算ほどには積み上がっていません。`;
+    }else{
+      const ns=norms.reduce((s,v)=>s+v,0), tot=[0,1,2].map(k=>vs.reduce((s,v)=>s+v[k],0));
+      const eta=ns>0?Math.hypot(...tot)/ns:NaN, etaR=ns>0?Math.hypot(...norms)/ns:NaN;
+      if(!Number.isFinite(eta)) say='各段のずれがほぼゼロです。';
+      else if(eta>=0.85) say=`各段のずれが<b>おおむね同じ向き</b>なので、色差が<b>積み上がって</b>います（向きのそろい具合 ${(eta*100).toFixed(0)}%）。`;
+      else if(eta<=etaR) say=`各段のずれが<b>打ち消し合い</b>、向きが無関係な場合よりも小さくなっています（向きのそろい具合 ${(eta*100).toFixed(0)}%）。`;
+      else say=`各段のずれの向きがばらついているため、単純加算ほどには積み上がっていません（向きのそろい具合 ${(eta*100).toFixed(0)}%）。`;
+    }
+    const budget=steps.reduce((s,r)=>s+r.tol,0);
+    $('accAcc').innerHTML=`<h3>色差の積み上がり（${fin.p.name}）</h3>
+      ${row('単純加算（最悪）',stack,sum)}
+      ${row('二乗和平方根',`<span class="bar" style="left:0;width:${pc(rss)};background:var(--muted);opacity:.5;border-radius:4px"></span>`,rss)}
+      ${row(`<b>実際</b> ${fin.p.name}`,`<span class="bar" style="left:0;width:${pc(act)};background:${fin.p.c};border-radius:4px"></span>`,act)}
+      <div class="says">${say} 実際の色差は単純加算の <b class="num">${(sum>0?act/sum*100:0).toFixed(0)}%</b>${act>tolT?`、許容差 ${f2(tolT)} を <b style="color:var(--ng)">${f2(act-tolT)} 超過</b>`:`、許容差 ${f2(tolT)} まで残り ${f2(tolT-act)}`}。</div>
+      ${budget>tolT+1e-9?`<div class="says warn">許容差の配分：各段の許容差の合計 ${steps.map(r=>f2(r.tol)).join(' ＋ ')} ＝ ${f2(budget)} が、${fin.p.name} の許容差 ${f2(tolT)} を超えています。各段とも合格でも、同じ向きにずれると最終的に NG になり得ます。</div>`:''}`;
+  }
+  // 何がずれているか（各段と最終の累積）
+  const show=[...steps,...(n>=3?[fin]:[])];
+  const lbl=!abs?['ΔL*','Δa*','Δb*']:(f==='de76'?['ΔL*','ΔC*','ΔH*']:['明度項','彩度項','色相項']);
+  const vals=r=>!abs?[r.dL,r.da,r.db]:[r.tL,r.tC,r.tH];
+  let cmax=0; show.forEach(r=>vals(r).forEach(v=>{cmax=Math.max(cmax,Math.abs(v));})); cmax=cmax||1;
   const cbar=v=>{ const w=Math.abs(v)/cmax*50; return `<div class="track"><span class="mid"></span><span class="bar" style="left:${v>=0?50:50-w}%;width:${w}%;background:var(--c);border-radius:3px"></span></div>`; };
-  const expl=useAB?'絶対値がないため、彩度・色相には分けず ΔL*・Δa*・Δb* で示します。':(f==='de76'?'ΔE*ab を明度・彩度・色相に分けた値。':`${FNAME[f]} の重みを掛けた後の値。2 乗和${f==='de00'?'（＋回転項）':''}が ΔE² になります。`);
-  $('comp').innerHTML=`<h3>何がずれているか</h3><p class="note">${expl}右が＋。</p>`+
-    res.map((r,j)=>`<div class="pairblk" style="--c:${PAIRS[j].c}"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="color:${PAIRS[j].c}">${PAIRS[j].name}</b><span class="num small">ΔE ${f2(r.dE)}</span></div>
+  const expl=!abs?'絶対値がないため、彩度・色相には分けず ΔL*・Δa*・Δb* で示します。':(f==='de76'?'ΔE*ab を明度・彩度・色相に分けた値。':`${FNAME[f]} の重みを掛けた後の値。2 乗和${f==='de00'?'（＋回転項）':''}が ΔE² になります。`);
+  $('accComp').innerHTML=`<h3>何がずれているか</h3><p class="note">${expl}右が＋。言葉は「後の試料が前の試料に比べて」の向きです。</p>`+
+    show.map(r=>`<div class="pairblk" style="--c:${r.p.c}"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="color:${r.p.c}">${r.p.name}</b><span class="num small">ΔE ${f2(r.dE)}</span></div>
       ${vals(r).map((v,k)=>`<div class="comp"><span>${lbl[k]}</span>${cbar(v)}<span class="num" style="text-align:right">${sgn2(v)}</span></div>`).join('')}
       <div class="words">${words(r,abs).map(w=>`<span class="word">${w}</span>`).join('')}</div></div>`).join('');
   // 数値表
-  let t=`<thead><tr><th>基準 → 試料</th><th>ΔL*</th><th>Δa*</th><th>Δb*</th>${abs?'<th>ΔC*</th><th>ΔH*</th>':''}<th>ΔE*ab</th><th>ΔE ${FNAME[f]}</th><th>許容差</th><th>判定</th></tr></thead><tbody>`;
-  res.forEach((r,j)=>{ t+=`<tr><td style="color:${PAIRS[j].c};font-weight:700">${PAIRS[j].name}</td>${[r.dL,r.da,r.db,...(abs?[r.dC,r.dH]:[])].map(v=>`<td class="num">${sgn2(v)}</td>`).join('')}<td class="num">${f2(Math.hypot(r.dL,r.da,r.db))}</td><td class="num"><b>${f2(r.dE)}</b></td><td class="num">${f2(r.tol)}</td><td>${r.ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</td></tr>`; });
-  $('tblRes').innerHTML=t+'</tbody>';
+  let t=`<thead><tr><th>組み合わせ</th><th>ΔL*</th><th>Δa*</th><th>Δb*</th>${abs?'<th>ΔC*</th><th>ΔH*</th>':''}<th>ΔE*ab</th><th>ΔE ${FNAME[f]}</th><th>許容差</th><th>判定</th></tr></thead><tbody>`;
+  res.forEach(r=>{ t+=`<tr><td style="color:${r.p.c};font-weight:700">${r.p.name}</td>${[r.dL,r.da,r.db,...(abs?[r.dC,r.dH]:[])].map(v=>`<td class="num">${sgn2(v)}</td>`).join('')}<td class="num">${f2(Math.hypot(r.dL,r.da,r.db))}</td><td class="num"><b>${f2(r.dE)}</b></td><td class="num">${f2(r.tol)}</td><td>${r.ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</td></tr>`; });
+  $('accRes').innerHTML=t+'</tbody>';
 }
-function renderStrip(R){
-  const a=R.length>1?R[2]:R[0], el=$('strip');
-  if(!hasAbs()){ el.className='strip rel'; el.innerHTML=SAMPLES.map(n=>`<div>${n}</div>`).join(''); el.title='絶対値を入れると色の目安を表示します'; return; }
-  el.className='strip'; el.title=R.length>1?'45°（正面）の色の目安':'色の目安';
-  el.innerHTML=a.lab.map((l,i)=>`<div style="background:rgb(${lab2rgb(...l)});color:${l[0]>55?'#111':'#f4f4f4'}">${SAMPLES[i]}</div>`).join('');
+
+// ---------- 描画：中間色 ----------
+function renderMid(R){
+  const a=R[Math.min(S.sel,R.length-1)], f=FNAME[S.formula], t=S.mid.t;
+  $('midTitle').textContent='中間色'+(R.length>1?'：'+a.ang:'');
+  angTabs($('midAngTabs'),R);
+  $('midTnote').textContent=t===50?'（A と B から等しい色差）':`（M → A が A → B 全体の ${t}% 相当）`;
+  const C=l=>Math.hypot(l[1],l[2]), H=l=>(Math.atan2(l[2],l[1])*180/Math.PI+360)%360;
+  $('midCards').innerHTML=`
+    <div class="card" style="--c:${MCOL}"><div class="route">中間色 M</div>
+      <div class="labv">${['L*','a*','b*'].map((k,i)=>`<span><small>${k}</small><b class="num">${a.M[i].toFixed(2)}</b></span>`).join('')}</div>
+      <div class="small muted">C* ${C(a.M).toFixed(2)}・h ${H(a.M).toFixed(1)}°</div></div>
+    <div class="card" style="--c:var(--ink)"><div class="route">M → A</div>
+      <div class="val"><span class="n num">${f2(a.dA)}</span><span class="u">ΔE ${f}</span></div>
+      <div class="small muted">A → B 全体は ΔE ${f2(a.dAB)}</div></div>
+    <div class="card" style="--c:${sCol(1)}"><div class="route">M → B</div>
+      <div class="val"><span class="n num">${f2(a.dB)}</span><span class="u">ΔE ${f}</span></div>
+      <div class="small muted">M → A との差 ${f2(Math.abs(a.dA-a.dB))}</div></div>`;
+  // A → B のグラデーションと M の位置
+  const N=24; let gr='';
+  for(let k=0;k<N;k++){ const s=(k+0.5)/N; gr+=`<span style="background:${rgbCss(a.A.map((v,c)=>v+s*(a.B[c]-v)))}"></span>`; }
+  gr+=`<span class="mk" style="left:${(a.s*100).toFixed(2)}%"><b>M</b></span>`;
+  $('midGrad').innerHTML=gr;
+  // a*b* 平面：M から等しい色差（M を基準）の境界
+  const pts=[{lab:a.A,name:'A',c:'var(--ink)'},{lab:a.B,name:'B',c:sCol(1)},{lab:a.M,name:'M',c:MCOL}];
+  const cont=[{center:a.M,tol:a.dA,c:MCOL}]; if(Math.abs(a.dA-a.dB)>1e-6) cont.push({center:a.M,tol:a.dB,c:sCol(1)});
+  drawAb($('midAb'),pts,[{from:a.A,to:a.B,c:'var(--muted)',dash:true}],cont,false);
+  drawL($('midL'),pts.map(p=>({L:p.lab[0],name:p.name,c:p.c})),false);
+  $('midContourNote').textContent=`破線の囲み：M を基準に ΔE ${f} が ${f2(a.dA)}${cont.length>1?` と ${f2(a.dB)}`:''} になる境界（L* が M と同じ断面）。${t===50?'A と B は同じ囲みの上（L* の差の分だけ内外にずれる）にあります。':''}`;
+  // FI
+  if(R.length>1){
+    const fi=k=>flopIndex(R[0][k][0],R[2][k][0],R[4][k][0]), fA=fi('A'), fB=fi('B'), fM=fi('M');
+    $('midFi').innerHTML=`<h3>フロップインデックス</h3>`+drawFiLine([{v:fA,name:'A',c:'var(--ink)'},{v:fB,name:'B',c:sCol(1)},{v:fM,name:'M',c:MCOL}])+
+      `<p class="note">ΔFI（M − A）${sgn2(fM-fA)}、（M − B）${sgn2(fM-fB)}。</p>`;
+  }else $('midFi').innerHTML='';
+  // 表
+  let tb=`<thead><tr><th>${R.length>1?'角度':'条件'}</th><th>L*</th><th>a*</th><th>b*</th><th>C*</th><th>h°</th><th>M→A</th><th>M→B</th></tr></thead><tbody>`;
+  R.forEach(r=>{ tb+=`<tr><td class="num">${esc(r.ang)}</td>${r.M.map(v=>`<td class="num">${v.toFixed(2)}</td>`).join('')}<td class="num">${C(r.M).toFixed(2)}</td><td class="num">${H(r.M).toFixed(1)}</td><td class="num">${f2(r.dA)}</td><td class="num">${f2(r.dB)}</td></tr>`; });
+  $('midRes').innerHTML=tb+'</tbody>';
+  const maxLin=Math.max(...R.map(r=>r.dLin));
+  $('midMethodNote').textContent=S.formula==='de76'?'CIE76 では、M は A と B の L*a*b* を単純に内分した点と一致します。':
+    `L*a*b* を単純に ${t}% 内分した点との差は最大 ΔE*ab ${maxLin.toFixed(3)} です（${f} の重みが A 側と B 側で異なるため）。`;
 }
 
 // ---------- コントロール ----------
 function syncControls(){
-  const abs=hasAbs();
-  document.querySelectorAll('#segFormula button').forEach(b=>{ b.disabled=!abs&&b.dataset.v!=='de76'; b.setAttribute('aria-pressed',b.dataset.v===effFormula()); });
+  const abs=S.tab==='mid'||accHasAbs(), f=effFormula();
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));
+  $('p-acc').hidden=S.tab!=='acc'; $('p-mid').hidden=S.tab!=='mid';
+  document.querySelectorAll('#segFormula button').forEach(b=>{ b.disabled=!abs&&b.dataset.v!=='de76'; b.setAttribute('aria-pressed',b.dataset.v===f); });
   document.querySelectorAll('#segGeom button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.geom));
-  document.querySelectorAll('#segAbs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.absMode));
-  const f=effFormula();
+  document.querySelectorAll('#segAccMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.acc.mode));
+  document.querySelectorAll('#segMidMode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===S.mid.mode));
+  $('anchorCtl').hidden=S.acc.mode!=='anchor';
   $('p94').hidden=f!=='de94'; $('pcmc').hidden=f!=='cmc'; $('p00').hidden=f!=='de00'; $('pSingle').hidden=S.geom!=='single';
-  $('multiRow').hidden=S.geom!=='multi';
-  const n=$('formulaNote');
-  n.hidden=abs;
-  n.textContent=abs?'':'絶対値なしでは CIE76 だけが計算できます。CIE94・CMC・CIEDE2000 とフロップインデックスは基準色の値で重みが変わるため、「手元のデータ」で絶対値を含む入力を選ぶと使えるようになります。';
+  $('accMulti').hidden=S.geom!=='multi';
+  $('formulaNote').hidden=abs;
+  $('formulaNote').textContent=abs?'':'差のみでは CIE76 だけが計算できます。CIE94・CMC・CIEDE2000 とフロップインデックスは基準色の値で重みが変わるため、「手元のデータ」で絶対値を含む入力を選ぶと使えるようになります。';
   $('sel94').value=S.p94; $('cmcL').value=S.cmc.l; $('cmcC').value=S.cmc.c; $('kL').value=S.k.kL; $('kC').value=S.k.kC; $('kH').value=S.k.kH; $('singleLabel').value=S.singleLabel;
 }
-function seg(id,fn){ $(id).addEventListener('click',e=>{ const b=e.target.closest('button'); if(b&&!b.disabled){ fn(b.dataset.v); syncControls(); renderInputs(); update(); } }); }
-seg('segFormula',v=>S.formula=v);
+function refresh(){ syncControls(); renderInputs(); update(); }
+function seg(id,fn){ $(id).addEventListener('click',e=>{ const b=e.target.closest('button'); if(b&&!b.disabled){ fn(b.dataset.v); refresh(); } }); }
+seg('segFormula',v=>{S.formula=v;});
 seg('segGeom',v=>{ S.geom=v; S.sel=0; });
-// 切替前の値から、切替後のモードで使う欄を埋める（同じ 3 試料を表すように換算する）
-function switchAbs(next){
-  const prev=S.absMode;
-  if(prev===next) return;
-  const r4=v=>Math.round(v*1e4)/1e4, sub=(a,b)=>a.map((v,k)=>r4(v-b[k]));
-  ['single','multi'].forEach(gk=>{
-    const c=S[gk], save=S.geom; S.geom=gk;
-    const n=c.d1.length;
-    for(let i=0;i<n;i++){
-      const pts=points(i);
-      // 絶対値が分かっているモードからなら 3 試料すべて確定する
-      if(prev!=='none'){
-        c.abs3[i]=pts.map(p=>p.map(r4));
-        if(next==='target') c.abs[i]=pts[0].map(r4);
-        if(next==='panel') c.abs[i]=pts[1].map(r4);
-      }
-      // 差は常に座標から求め直せる（差のみ → 3 試料 のときは差だけ残し、絶対値は手入力を待つ）
-      if(prev==='all'||prev!=='none'){ c.d1[i]=sub(pts[1],pts[0]); c.d2[i]=sub(pts[2],pts[1]); }
-    }
-    S.geom=save;
-  });
-  S.absMode=next;
-}
-seg('segAbs',v=>switchAbs(v));
-$('angTabs').addEventListener('click',e=>{ const b=e.target.closest('[data-sel]'); if(b){ S.sel=+b.dataset.sel; update(); } });
+seg('segAccMode',v=>{S.acc.mode=v;});
+seg('segMidMode',v=>{S.mid.mode=v;});
+document.querySelector('nav.tabs').addEventListener('click',e=>{ const b=e.target.closest('button[data-tab]'); if(!b) return; S.tab=b.dataset.tab; try{ history.replaceState(null,'','#'+S.tab); }catch(err){} refresh(); });
+$('selAnchor').addEventListener('change',e=>{ S.acc.anchor=+e.target.value; refresh(); });
+$('nMinus').addEventListener('click',()=>{ setN(S.acc.n-1); refresh(); });
+$('nPlus').addEventListener('click',()=>{ setN(S.acc.n+1); refresh(); });
+document.addEventListener('click',e=>{ const b=e.target.closest('.tabs-ang [data-sel], #accAng [data-sel]'); if(b){ S.sel=+b.dataset.sel; update(); } });
 $('sel94').addEventListener('change',e=>{ S.p94=e.target.value; update(); });
-[['cmcL','l'],['cmcC','c']].forEach(([id,k])=>$(id).addEventListener('input',e=>{ const v=parseFloat(e.target.value); if(v>0){ S.cmc[k]=v; update(); } }));
-['kL','kC','kH'].forEach(k=>$(k).addEventListener('input',e=>{ const v=parseFloat(e.target.value); if(v>0){ S.k[k]=v; update(); } }));
+[['cmcL','l'],['cmcC','c']].forEach(([id,k])=>$(id).addEventListener('input',e=>{ const v=parseNum(e.target.value); if(v>0){ S.cmc[k]=v; update(); } }));
+['kL','kC','kH'].forEach(k=>$(k).addEventListener('input',e=>{ const v=parseNum(e.target.value); if(v>0){ S.k[k]=v; update(); } }));
 $('singleLabel').addEventListener('input',e=>{ S.singleLabel=e.target.value; renderInputs(); update(); });
-$('btnReset').addEventListener('click',()=>{ S[S.geom]=JSON.parse(JSON.stringify(DEFAULT[S.geom])); renderInputs(); update(); });
-$('btnCopy').addEventListener('click',async()=>{
-  const R=compute(), FI=computeFI(R), f=FNAME[effFormula()];
-  const lines=[['条件','基準→試料','ΔL*','Δa*','Δb*','ΔE*ab','ΔE '+f,'許容差','判定'].join('\t')];
-  R.forEach(a=>a.res.forEach((r,j)=>lines.push([a.ang,PAIRS[j].name,...[r.dL,r.da,r.db,Math.hypot(r.dL,r.da,r.db),r.dE,r.tol].map(v=>v.toFixed(3)),r.ng?'NG':'OK'].join('\t'))));
-  if(FI){ lines.push(''); lines.push(['FI','ターゲット','承認塗板','製品'].join('\t')); lines.push(['',...FI.fi.map(v=>v.toFixed(3))].join('\t'));
-    lines.push(['基準→試料','ΔFI','許容差','判定'].join('\t')); FI.d.forEach((x,j)=>lines.push([PAIRS[j].name,x.v.toFixed(3),x.tol.toFixed(3),x.ng?'NG':'OK'].join('\t'))); }
-  const txt=lines.join('\n');
-  try{ await navigator.clipboard.writeText(txt); $('toast').textContent='コピーしました'; setTimeout(()=>{$('toast').textContent='';},2500); }
-  catch(e){ $('copyFallback').innerHTML='<p class="note">自動でコピーできませんでした。下の枠を選択してコピーしてください。</p><textarea id="copyTa" rows="6" style="width:100%;font-family:var(--f-num);font-size:.8rem"></textarea>'; $('copyTa').value=txt; $('copyTa').select(); }
+function setT(v){ if(!Number.isFinite(v)) return; S.mid.t=Math.max(0,Math.min(100,Math.round(v*10)/10)); $('midT').value=S.mid.t; update(); }
+$('midT').addEventListener('input',e=>{ setT(+e.target.value); $('midTnum').value=S.mid.t; });
+$('midTnum').addEventListener('input',e=>{ setT(parseNum(e.target.value)); });
+$('accReset').addEventListener('click',()=>{ const d=clone(DEFAULT.acc); S.acc.n=d.n; S.acc.mode=d.mode; S.acc.anchor=d.anchor; S.acc.fiTol=d.fiTol; S.acc.single=d.single; S.acc.multi=d.multi; refresh(); });
+$('midReset').addEventListener('click',()=>{ S.mid=clone(DEFAULT.mid); refresh(); });
+async function copyText(txt,fb){
+  try{ await navigator.clipboard.writeText(txt); fb.innerHTML=''; toast('コピーしました'); }
+  catch(e){ fb.innerHTML='<p class="note">自動でコピーできませんでした。下の枠を選択してコピーしてください。</p><textarea rows="6" style="width:100%;font-family:var(--f-num);font-size:.8rem"></textarea>'; const ta=fb.querySelector('textarea'); ta.value=txt; ta.select(); }
+}
+$('accCopy').addEventListener('click',()=>{
+  const R=computeAcc(), FI=computeAccFI(R), f=FNAME[effFormula()];
+  const lines=[['条件','組み合わせ','ΔL*','Δa*','Δb*','ΔE*ab','ΔE '+f,'許容差','判定'].join('\t')];
+  R.forEach(a=>a.res.forEach(r=>lines.push([a.ang,r.p.name,...[r.dL,r.da,r.db,Math.hypot(r.dL,r.da,r.db),r.dE,r.tol].map(v=>v.toFixed(3)),r.ng?'NG':'OK'].join('\t'))));
+  if(FI){ lines.push('',['FI',...FI.fi.map((_,s)=>LET[s])].join('\t'),['',...FI.fi.map(v=>v.toFixed(3))].join('\t'),['組み合わせ','ΔFI','許容差','判定'].join('\t'));
+    FI.d.forEach(x=>lines.push([x.p.name,x.v.toFixed(3),x.tol.toFixed(3),x.ng?'NG':'OK'].join('\t'))); }
+  copyText(lines.join('\n'),$('accCopyFb'));
+});
+$('midCopy').addEventListener('click',()=>{
+  const R=computeMid(), f=FNAME[S.formula];
+  const lines=[`中間色（${f}、A からの割合 ${S.mid.t}%）`,['条件','A L*','A a*','A b*','B L*','B a*','B b*','M L*','M a*','M b*','ΔE M→A','ΔE M→B'].join('\t')];
+  R.forEach(r=>lines.push([r.ang,...r.A,...r.B,...r.M,r.dA,r.dB].map(v=>typeof v==='number'?v.toFixed(3):v).join('\t')));
+  copyText(lines.join('\n'),$('midCopyFb'));
 });
 
 function update(){
-  const R=compute();
-  if(S.sel>=R.length) S.sel=0;
-  const FI=computeFI(R);
-  renderStrip(R);
-  renderSummary(R,FI);
-  if(S.geom==='multi'){ renderAng(R); renderFI(R,FI); }
-  renderDetail(R);
+  if(S.sel>=nAng()) S.sel=0;
+  if(S.tab==='acc'){
+    const R=computeAcc(), FI=computeAccFI(R);
+    renderAccSummary(R,FI);
+    if(S.geom==='multi'){ renderAccAng(R); renderAccFI(FI); }
+    renderAccDetail(R);
+  }else renderMid(computeMid());
   save();
 }
-syncControls(); renderInputs(); update();
+ensureTol();
+refresh();
 
 // オフラインで使えるように Service Worker を登録（https か localhost のときだけ。埋め込み表示では登録しない）
 (() => {
@@ -785,9 +1043,7 @@ syncControls(); renderInputs(); update();
         if (!w) return;
         w.addEventListener('statechange', () => {
           // 既存版が動いている状態で新版が入ったときだけ知らせる
-          if (w.state === 'installed' && navigator.serviceWorker.controller) {
-            $('toast').textContent = '新しい版を取り込みました。開き直すと反映されます';
-          }
+          if (w.state === 'installed' && navigator.serviceWorker.controller) toast('新しい版を取り込みました。開き直すと反映されます');
         });
       });
     }).catch(() => { /* 登録できなくても計算には影響しない */ });
