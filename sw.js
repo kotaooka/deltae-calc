@@ -1,6 +1,6 @@
 // 色差累積ビューアの Service Worker
 // 公開ファイルを更新したら VERSION を上げる。古いキャッシュは activate 時に削除される
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.1.1';
 const APP_CACHE = `deltae-calc-${VERSION}`;
 const FONT_CACHE = 'deltae-calc-fonts';
 
