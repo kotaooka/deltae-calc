@@ -56,7 +56,7 @@ Google Fonts が読めない環境で撮ると、日本語に中国語字形な�
 
 ```powershell
 # 任意の作業フォルダで
-npm pack @fontsource/biz-udpgothic @fontsource/zen-kaku-gothic-new @fontsource/jetbrains-mono
+npm pack @fontsource/biz-udpgothic @fontsource/ibm-plex-mono
 Get-ChildItem *.tgz | ForEach-Object { tar -xzf $_.Name --one-top-level }
 pip install playwright
 python -m playwright install chromium

@@ -155,3 +155,9 @@ CIE76 では M は A と B の L\*a\*b\* を単純に平均した色と一致し
 ## 開発者向けの情報
 
 ファイル構成、計算式と検証方法、画像の作り直し方は [DEVELOPMENT.md](DEVELOPMENT.md) を参照してください。
+
+---
+
+## ライセンス
+
+[MIT License](LICENSE)

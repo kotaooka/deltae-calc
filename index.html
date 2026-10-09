@@ -17,42 +17,47 @@
 <meta property="og:image:alt" content="色差累積ビューア：色差の累積と中間色。CIE76・CIE94・CMC・CIEDE2000、5角度、フロップインデックス">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#2c5a86" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#13171c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#1d5c96" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11161b" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="色差累積">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<script>
+  // 保存したテーマ（auto / light / dark）を描画前に当てる
+  try { const t = localStorage.getItem("deltae-calc-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) { /* 保存できない環境 */ }
+</script>
 <style>
 /* レイアウト: 上部ヘッダー（QC Workbench 共通の見出し＋タブ）→ 計算条件 → タブごとの入力・判定・図 */
 :root{
-  --bg:#eceff2; --surface:#f9fafb; --sunk:#e3e7eb; --ink:#1b2128; --muted:#58626e; --line:#cfd5dc;
-  --accent:#2c5a86; --on-accent:#ffffff;
+  /* 基本色・字体は cpk-calc / sampling-calc / msa-calc / logit-calc と共通 */
+  --bg:#eef1f4; --surface:#ffffff; --sunk:#e4e9ee; --ink:#15212c; --muted:#475563; --line:#d5dce3;
+  --accent:#1d5c96; --on-accent:#ffffff;
   /* 各段（前の試料 → 次の試料）の色 */
   --c1:#17836a; --c2:#b8740a; --c3:#2f6db3; --c4:#7a4fb5; --c5:#5f7d1e;
   /* 累積（A → 各試料）の色。q1 が最終の試料 */
   --q1:#b02e6a; --q2:#c4608f; --q3:#d088aa; --q4:#ddb0c5;
-  --ok:#2d7a4c; --okbg:#dcefe3; --ng:#c0392b; --ngbg:#f7dedb; --warn:#8a5d00; --warnbg:#f6ecd0;
-  --f-disp:"Zen Kaku Gothic New","BIZ UDPGothic","Hiragino Sans","Yu Gothic UI",sans-serif;
+  --ok:#17703a; --okbg:#e2f2e7; --ng:#ad2a22; --ngbg:#f8e4e2; --warn:#8a5300; --warnbg:#f8ecd9;
+  --f-disp:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
   --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
-  --f-num:"JetBrains Mono",ui-monospace,"Consolas",monospace;
+  --f-num:"IBM Plex Mono",ui-monospace,"Consolas",monospace;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#13171c; --surface:#1b2127; --sunk:#252c34; --ink:#e5e9ed; --muted:#9ba6b2; --line:#333c46;
-  --accent:#86b4e0; --on-accent:#0f1a26;
+  --bg:#11161b; --surface:#19212a; --sunk:#253039; --ink:#e6ecf2; --muted:#a9b5c1; --line:#2b3641;
+  --accent:#6ba6df; --on-accent:#0d1620;
   --c1:#4cc4a2; --c2:#efa93e; --c3:#78aef0; --c4:#b593f0; --c5:#a5c55a;
   --q1:#ea6fa6; --q2:#c9628f; --q3:#a75679; --q4:#874a64;
-  --ok:#6cc792; --okbg:#1f3a2a; --ng:#ff7b6b; --ngbg:#43231f; --warn:#e8c25a; --warnbg:#3b3219; color-scheme:dark}}
+  --ok:#57c483; --okbg:#163222; --ng:#f07a70; --ngbg:#3a1c1a; --warn:#e3a84e; --warnbg:#36280f; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#13171c; --surface:#1b2127; --sunk:#252c34; --ink:#e5e9ed; --muted:#9ba6b2; --line:#333c46;
-  --accent:#86b4e0; --on-accent:#0f1a26;
+  --bg:#11161b; --surface:#19212a; --sunk:#253039; --ink:#e6ecf2; --muted:#a9b5c1; --line:#2b3641;
+  --accent:#6ba6df; --on-accent:#0d1620;
   --c1:#4cc4a2; --c2:#efa93e; --c3:#78aef0; --c4:#b593f0; --c5:#a5c55a;
   --q1:#ea6fa6; --q2:#c9628f; --q3:#a75679; --q4:#874a64;
-  --ok:#6cc792; --okbg:#1f3a2a; --ng:#ff7b6b; --ngbg:#43231f; --warn:#e8c25a; --warnbg:#3b3219; color-scheme:dark}
+  --ok:#57c483; --okbg:#163222; --ng:#f07a70; --ngbg:#3a1c1a; --warn:#e3a84e; --warnbg:#36280f; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
@@ -67,6 +72,7 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .brand .home{font-size:.78rem;color:var(--muted);text-decoration:none;margin-right:-6px}
 .brand .home:hover{color:var(--accent);text-decoration:underline}
 .brand .crumb{font-size:.78rem;color:var(--muted);margin-right:-6px}
+.brand .theme{margin-left:auto;font-size:.8rem;padding:4px 10px}
 nav.tabs{display:flex;gap:4px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
 nav.tabs button{flex:0 0 auto;border:0;background:none;color:var(--muted);font:inherit;font-size:.92rem;padding:8px 12px 10px;cursor:pointer;border-bottom:3px solid transparent}
@@ -123,7 +129,7 @@ table{border-collapse:collapse}
 .banner{display:flex;gap:16px;align-items:flex-start;padding:14px 16px;border-radius:12px;border:1px solid var(--line);flex-wrap:wrap}
 .banner.ok{background:var(--okbg);border-color:var(--ok)}
 .banner.ng{background:var(--ngbg);border-color:var(--ng)}
-.banner .big{font-family:var(--f-disp);font-weight:900;font-size:1.5rem;line-height:1.2;white-space:nowrap}
+.banner .big{font-family:var(--f-disp);font-weight:700;font-size:1.5rem;line-height:1.2;white-space:nowrap}
 .banner.ok .big{color:var(--ok)} .banner.ng .big{color:var(--ng)}
 .banner .body{flex:1 1 280px;min-width:0}
 .cardgroup{display:flex;flex-direction:column;gap:8px}
@@ -201,6 +207,7 @@ details summary{cursor:pointer;font-weight:700}
     <div class="brand">
       <a class="home" href="https://kotaooka.github.io/" title="QC Workbench（ツール一覧）へ戻る">QC Workbench</a><span class="crumb" aria-hidden="true">›</span><h1>色差累積ビューア</h1>
       <span class="std">CIE76 / CIE94 / CMC / CIEDE2000・単一条件／5 角度</span>
+      <button class="btn theme" id="themeBtn" type="button" aria-label="表示テーマを切り替え">表示：自動</button>
     </div>
     <nav class="tabs" role="tablist" aria-label="計算の種類">
       <button role="tab" id="tab-acc" aria-controls="p-acc" data-tab="acc">色差の累積</button>
@@ -397,6 +404,7 @@ details summary{cursor:pointer;font-weight:700}
     <div><b>差だけで計算できる範囲</b>　A から各試料への差は各段の差のベクトル和で、CIE76 ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000 と FI は基準色そのものの値で重みが変わるため、いずれかの試料の絶対値が必要です。</div>
     <div><b>累積の読み方</b>　「単純加算」は各段のずれが同じ向きに重なった場合の最大値、「二乗和平方根」は向きが無関係な場合の目安です。CIE76 では実際の値が単純加算を超えることはありませんが、CIE94・CMC・CIEDE2000 は距離の公理を満たさないため、わずかに超えることがあります。</div>
     <div><b>中間色</b>　M は A と B を L*a*b* で結んだ線上の点で、ΔE(M→A) : ΔE(M→B) が指定の比になる位置を二分法で求めます（M を基準として計算）。CIE76 では L*a*b* の単純な内分点と一致します。5 角度の場合は角度ごとに独立に求めます。</div>
+    <div><a href="https://github.com/kotaooka/deltae-calc">GitHub</a> ・ MIT License</div>
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -1030,6 +1038,23 @@ function update(){
 }
 ensureTol();
 refresh();
+
+// ---------- 表示テーマ（自動 / ライト / ダーク） ----------
+(() => {
+  const THEMES = ['auto', 'light', 'dark'], LABEL = { auto: '表示：自動', light: '表示：ライト', dark: '表示：ダーク' };
+  const btn = $('themeBtn');
+  let theme = document.documentElement.dataset.theme || 'auto';
+  const apply = t => {
+    if (t === 'auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.dataset.theme = t;
+    btn.textContent = LABEL[t];
+  };
+  btn.addEventListener('click', () => {
+    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+    try { localStorage.setItem('deltae-calc-theme', theme); } catch (e) { /* 保存できなくても切り替えは効く */ }
+    apply(theme);
+  });
+  apply(theme);
+})();
 
 // オフラインで使えるように Service Worker を登録（https か localhost のときだけ。埋め込み表示では登録しない）
 (() => {

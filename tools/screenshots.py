@@ -5,8 +5,8 @@
 # 読み込みを確認してから撮影する（読めていなければ中断）。
 #
 # 準備（任意の作業フォルダで）:
-#   npm pack @fontsource/biz-udpgothic @fontsource/zen-kaku-gothic-new @fontsource/jetbrains-mono
-#   上の3つの .tgz を展開（tar -xzf <ファイル> --one-top-level）
+#   npm pack @fontsource/biz-udpgothic @fontsource/ibm-plex-mono
+#   上の2つの .tgz を展開（tar -xzf <ファイル> --one-top-level）
 #   pip install playwright && python -m playwright install chromium
 # 実行:
 #   python tools/screenshots.py <フォント展開先フォルダ>
@@ -21,8 +21,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 PKGS = {
     "biz": ("biz-udpgothic", ["400", "700"]),
-    "zen": ("zen-kaku-gothic-new", ["700", "900"]),
-    "mono": ("jetbrains-mono", ["400", "600"]),
+    "mono": ("ibm-plex-mono", ["500", "600"]),
 }
 DIRS, CSS = {}, ""
 for tag, (name, weights) in PKGS.items():
@@ -55,8 +54,8 @@ def open_page(browser, url, **ctx):
     p.wait_for_load_state("networkidle")
     ok = p.evaluate("""async () => { await document.fonts.ready;
         return [document.fonts.check("15px 'BIZ UDPGothic'", "範囲を貼り付け"),
-                document.fonts.check("700 28px 'Zen Kaku Gothic New'", "測定値"),
-                document.fonts.check("15px 'JetBrains Mono'", "0.85")]; }""")
+                document.fonts.check("700 28px 'BIZ UDPGothic'", "測定値"),
+                document.fonts.check("500 15px 'IBM Plex Mono'", "0.85")]; }""")
     assert all(ok), f"フォント未読込: {ok}"
     return c, p
 
