@@ -11,7 +11,7 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 FONT_DIR = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "/usr/share/fonts/opentype/noto")
 SS = 4  # 縮小前の倍率（アンチエイリアス用）
 
-ACCENT = (44, 90, 134)
+ACCENT = (29, 92, 150)  # #1d5c96（QC Workbench の計算ツール共通のアクセント色）
 TP, PP, TT = (76, 196, 162), (239, 169, 62), (234, 111, 166)
 
 
@@ -83,7 +83,7 @@ def icon(size, maskable=False, apple=False):
 def og():
     W, H = 1200 * 2, 630 * 2
     im = Image.new("RGB", (W, H))
-    top, bot = (38, 78, 124), (28, 60, 100)
+    top, bot = (28, 91, 149), (25, 80, 131)  # 他の計算ツールの og.png と同じグラデーション
     for yy in range(H):
         t = yy / H
         ImageDraw.Draw(im).line([(0, yy), (W, yy)], fill=tuple(round(top[i] + (bot[i] - top[i]) * t) for i in range(3)))
