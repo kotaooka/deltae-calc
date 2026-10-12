@@ -11,14 +11,17 @@ og.png                 SNS 共有用の画像（1200×630）
 docs/screenshots/      README 用のスクリーンショット
 tools/make_images.py   icons/ と og.png を作り直すスクリプト（Noto Sans CJK JP を使用）
 tools/screenshots.py   docs/screenshots/ を撮り直すスクリプト
+tests/                 計算の照合テスト（test.js）、Sharma らの公式テストデータ（sharma.js）、colour-science の参照値（reference.json / make_reference.py）
+.github/workflows/     push のたびに照合テストを実行する設定
 ```
 
 ## 更新して公開する手順
 
 1. `index.html` などを編集する
-2. `sw.js` の `VERSION` を上げる（上げないと、インストール済みの PWA に古い版が残る）。公開するファイルを増やしたら `ASSETS` にも足す
-3. 画面が変わったら、スクリーンショットを撮り直す（下記）
-4. `main` に push すると GitHub Pages に反映される
+2. 計算部分を変えたら `node tests/test.js` で照合する
+3. `sw.js` の `VERSION` を上げる（上げないと、インストール済みの PWA に古い版が残る）。公開するファイルを増やしたら `ASSETS` にも足す
+4. 画面が変わったら、スクリーンショットを撮り直す（下記）
+5. `main` に push すると GitHub Pages に反映される
 
 ## 計算式
 
@@ -41,12 +44,22 @@ tools/screenshots.py   docs/screenshots/ を撮り直すスクリプト
 
 ## 検証
 
-- CIEDE2000：Sharma らの[公式テストデータ](https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/) 34 組と 4 桁一致（基準・試料の入替も含む）
-- CIE94（塗装・一般、繊維）・CMC（2:1、1:1）・CIEDE2000：colour-science 0.4.7 と乱数 300 組で照合し、最大差 4×10⁻¹⁴
-- FI：L\*15°=118.2、L\*45°=58.1、L\*110°=30.5 で 11.73（手計算と一致）
-- 中間色：乱数 500 組 × 4 式 × 比 3 種で、ΔE(M→A) / (ΔE(M→A) + ΔE(M→B)) と指定の比の差が最大 6×10⁻¹⁴
+```powershell
+node tests/test.js              # 不一致があれば終了コード 1
+pip install colour-science
+python tests/make_reference.py  # 参照値 tests/reference.json を作り直す
+```
 
-計算部分は `index.html` の `/*MATH-START*/` から `/*MATH-END*/` の間にまとめてあり、Node.js で切り出して試験できる。
+計算部分は `index.html` の `/*MATH-START*/` から `/*MATH-END*/` の間にまとめてあり、テストはここを切り出して実行する。push のたびに GitHub Actions で、コミット済みの参照値との照合と、最新の colour-science で参照値を作り直しての照合の両方を行う。
+
+| 対象 | 照合先 | 件数 | 判定 |
+|---|---|---|---|
+| CIEDE2000 | Sharma らの[公式テストデータ](https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/) 34 組（基準・試料の入替も含む） | 68 | 公表値（小数 4 桁）の丸め幅 ±0.00005 以内 |
+| CIE76・CIE94（塗装・一般、繊維）・CMC（2:1、1:1）・CIEDE2000（kL = 1、2） | colour-science の計算値、乱数 300 組 × 7 式 | 2,100 | 差 1×10⁻⁹ 以下（実際の最大差は 5×10⁻¹⁴ 程度） |
+| FI | 手計算（L\*15°=118.2、L\*45°=58.1、L\*110°=30.5 で 11.73）と、L\*45° = 0・L\*15° < L\*110° の扱い | 3 | 一致 |
+| 中間色 | ΔE(M→A) / (ΔE(M→A) + ΔE(M→B)) と指定の比、乱数 500 組 × 4 式 × 比 3 種 | 6,000 | 差 1×10⁻⁹ 以下 |
+
+- CMC は色相角 164°・345° で T が、L\* = 16 で SL が不連続に変わる。M がこの位置に来ると比が飛び、指定の比ちょうどになる点がない。二分法は飛びの位置に収束するので、テストでは前後の比が指定の比をはさんでいれば正しいとみなす（乱数 6,000 件中 1 件、比の差 3×10⁻⁵）
 
 ## 画像の作り直し
 
