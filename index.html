@@ -199,6 +199,10 @@ details summary{cursor:pointer;font-weight:700}
 .foot a{color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:10;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.85rem;max-width:calc(100% - 32px)}
 @media (prefers-reduced-motion:no-preference){.track .bar{transition:width .25s ease,left .25s ease}}
+
+/* 支援リンク（DESIGN.md 4章）：本文の文字色を引き継ぎ、印刷では隠す */
+.support a { color: inherit; white-space: nowrap; }
+@media print { .support { display: none !important; } }
 </style>
 </head>
 <body>
@@ -404,7 +408,7 @@ details summary{cursor:pointer;font-weight:700}
     <div><b>差だけで計算できる範囲</b>　A から各試料への差は各段の差のベクトル和で、CIE76 ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000 と FI は基準色そのものの値で重みが変わるため、いずれかの試料の絶対値が必要です。</div>
     <div><b>累積の読み方</b>　「単純加算」は各段のずれが同じ向きに重なった場合の最大値、「二乗和平方根」は向きが無関係な場合の目安です。CIE76 では実際の値が単純加算を超えることはありませんが、CIE94・CMC・CIEDE2000 は距離の公理を満たさないため、わずかに超えることがあります。</div>
     <div><b>中間色</b>　M は A と B を L*a*b* で結んだ線上の点で、ΔE(M→A) : ΔE(M→B) が指定の比になる位置を二分法で求めます（M を基準として計算）。CIE76 では L*a*b* の単純な内分点と一致します。5 角度の場合は角度ごとに独立に求めます。</div>
-    <div><a href="https://github.com/kotaooka/deltae-calc">GitHub</a> ・ MIT License</div>
+    <div><a href="https://github.com/kotaooka/deltae-calc">GitHub</a> ・ MIT License<span class="support"> ・ <a href="https://buymeacoffee.com/kotaooka" target="_blank" rel="noopener"><span aria-hidden="true">☕</span> 開発を応援する（Buy Me a Coffee）</a></span></div>
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
