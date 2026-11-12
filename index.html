@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>色差（ΔE）計算ツール｜CIEDE2000・CMC・色差の累積と中間色</title>
-<meta name="description" content="試料 A → B → C … と色を引き継いだときの色差の累積と、2色の中間色を計算する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
+<meta name="description" content="試料A → B → C … と色を引き継いだときの色差の累積と、2色の中間色を計算する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
 <link rel="canonical" href="https://kotaooka.github.io/deltae-calc/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="QC Workbench">
 <meta property="og:title" content="色差（ΔE）計算ツール｜CIEDE2000・CMC・色差の累積と中間色">
-<meta property="og:description" content="試料 A → B → C … と色を引き継いだときの色差の累積と、2色の中間色を計算する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
+<meta property="og:description" content="試料A → B → C … と色を引き継いだときの色差の累積と、2色の中間色を計算する。CIE76 / CIE94 / CMC / CIEDE2000、単一条件 / 5角度、フロップインデックスに対応">
 <meta property="og:url" content="https://kotaooka.github.io/deltae-calc/">
 <meta property="og:image" content="https://kotaooka.github.io/deltae-calc/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="色差累積ビューア：色差の累積と中間色。CIE76・CIE94・CMC・CIEDE2000、5角度、フロップインデックス">
+<meta property="og:image:alt" content="色差計算機：色差の累積と中間色。CIE76・CIE94・CMC・CIEDE2000、5角度、フロップインデックス">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#1d5c96" media="(prefers-color-scheme: light)">
@@ -22,7 +22,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="色差累積">
+<meta name="apple-mobile-web-app-title" content="色差計算機">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -61,7 +61,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.6}
+body{text-autospace:normal;margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.6}
 
 /* 上部ヘッダー（QC Workbench のツール共通） */
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -197,6 +197,7 @@ svg .t-num{font-family:var(--f-num)}
 details summary{cursor:pointer;font-weight:700}
 .foot{font-size:.8rem;color:var(--muted);display:flex;flex-direction:column;gap:6px;max-width:82ch}
 .foot a{color:var(--accent)}
+.notes{margin-bottom:12px}
 .toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:10;background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.85rem;max-width:calc(100% - 32px)}
 @media (prefers-reduced-motion:no-preference){.track .bar{transition:width .25s ease,left .25s ease}}
 
@@ -209,8 +210,8 @@ details summary{cursor:pointer;font-weight:700}
 <header class="top">
   <div class="top-in">
     <div class="brand">
-      <a class="home" href="https://kotaooka.github.io/" title="QC Workbench（ツール一覧）へ戻る">QC Workbench</a><span class="crumb" aria-hidden="true">›</span><h1>色差累積ビューア</h1>
-      <span class="std">CIE76 / CIE94 / CMC / CIEDE2000・単一条件／5 角度</span>
+      <a class="home" href="https://kotaooka.github.io/" title="QC Workbench（ツール一覧）へ戻る">QC Workbench</a><span class="crumb" aria-hidden="true">›</span><h1>色差計算機</h1>
+      <span class="std">CIE76 / CIE94 / CMC / CIEDE2000・単一条件／5角度</span>
       <button class="btn theme" id="themeBtn" type="button" aria-label="表示テーマを切り替え">表示：自動</button>
     </div>
     <nav class="tabs" role="tablist" aria-label="計算の種類">
@@ -234,22 +235,22 @@ details summary{cursor:pointer;font-weight:700}
       <div class="ctl"><span class="lbl">測定条件</span>
         <div class="seg" id="segGeom" role="group" aria-label="測定条件">
           <button type="button" data-v="single">単一条件</button>
-          <button type="button" data-v="multi">5 角度</button>
+          <button type="button" data-v="multi">5角度</button>
         </div>
       </div>
-      <div class="ctl" id="p94"><span class="lbl">CIE94 用途</span>
-        <select id="sel94" aria-label="CIE94 用途">
+      <div class="ctl" id="p94"><span class="lbl">CIE94用途</span>
+        <select id="sel94" aria-label="CIE94用途">
           <option value="graphic">塗装・一般（kL=1, K1=0.045, K2=0.015）</option>
           <option value="textile">繊維（kL=2, K1=0.048, K2=0.014）</option>
         </select>
       </div>
-      <div class="ctl" id="pcmc"><span class="lbl">CMC 係数 l:c</span>
+      <div class="ctl" id="pcmc"><span class="lbl">CMC係数l:c</span>
         <div class="params">
           <label>l <input id="cmcL" inputmode="decimal" value="2"></label>
           <label>c <input id="cmcC" inputmode="decimal" value="1"></label>
         </div>
       </div>
-      <div class="ctl" id="p00"><span class="lbl">CIEDE2000 係数</span>
+      <div class="ctl" id="p00"><span class="lbl">CIEDE2000係数</span>
         <div class="params">
           <label>kL <input id="kL" inputmode="decimal" value="1"></label>
           <label>kC <input id="kC" inputmode="decimal" value="1"></label>
@@ -266,17 +267,17 @@ details summary{cursor:pointer;font-weight:700}
   <!-- ===== 色差の累積 ===== -->
   <div class="tabpanel" id="p-acc" role="tabpanel" aria-labelledby="tab-acc">
     <section class="panel" aria-label="測定値">
-      <div class="head"><h2>測定値</h2><span class="note">Excel の範囲を左上のセルに貼り付けできます</span></div>
-      <p class="lede">試料 A → B → C … と色を引き継いだとき、各段の色差と、A から見た色差がどう積み上がるかを示します。</p>
+      <div class="head"><h2>測定値</h2><span class="note">Excelの範囲を左上のセルに貼り付けできます</span></div>
+      <p class="lede">試料A → B → C … と色を引き継いだとき、各段の色差と、Aから見た色差がどう積み上がるかを示します。</p>
       <div class="controls">
         <div class="ctl"><span class="lbl">試料の数</span>
           <div class="stepper"><button type="button" id="nMinus" aria-label="試料を減らす">−</button><output id="nOut" aria-live="polite"></output><button type="button" id="nPlus" aria-label="試料を増やす">＋</button></div>
         </div>
         <div class="ctl"><span class="lbl">手元のデータ</span>
           <div class="seg" id="segAccMode" role="group" aria-label="手元のデータ">
-            <button type="button" data-v="none" title="各段の差 ΔL*Δa*Δb* だけ">差のみ</button>
-            <button type="button" data-v="anchor" title="各段の差と、どれか 1 試料の L*a*b*">差＋1 試料の絶対値</button>
-            <button type="button" data-v="all" title="すべての試料の L*a*b*">全試料の絶対値</button>
+            <button type="button" data-v="none" title="各段の差ΔL*Δa*Δb* だけ">差のみ</button>
+            <button type="button" data-v="anchor" title="各段の差と、どれか1試料のL*a*b*">差＋1試料の絶対値</button>
+            <button type="button" data-v="all" title="すべての試料のL*a*b*">全試料の絶対値</button>
           </div>
         </div>
         <div class="ctl" id="anchorCtl"><span class="lbl">絶対値がある試料</span>
@@ -289,11 +290,11 @@ details summary{cursor:pointer;font-weight:700}
     </section>
 
     <section class="panel" aria-label="許容差">
-      <div class="head"><h2>許容差</h2><span class="note">ΔE は選んだ色差式の値。|ΔFI| はフロップインデックスの差の絶対値</span></div>
+      <div class="head"><h2>許容差</h2><span class="note">ΔEは選んだ色差式の値。|ΔFI| はフロップインデックスの差の絶対値</span></div>
       <div class="scroll"><table class="tin" id="accTol"></table></div>
       <div class="tabs-ang">
         <button type="button" class="btn" id="accReset">サンプル値に戻す</button>
-        <button type="button" class="btn" id="accCopy">結果を TSV でコピー</button>
+        <button type="button" class="btn" id="accCopy">結果をTSVでコピー</button>
       </div>
       <div id="accCopyFb"></div>
     </section>
@@ -345,19 +346,19 @@ details summary{cursor:pointer;font-weight:700}
   <!-- ===== 中間色 ===== -->
   <div class="tabpanel" id="p-mid" role="tabpanel" aria-labelledby="tab-mid">
     <section class="panel" aria-label="2色の測定値">
-      <div class="head"><h2>2 色の測定値</h2><span class="note">Excel の範囲を左上のセルに貼り付けできます</span></div>
-      <p class="lede">色 A と色 B の中間の色 M を求めます。選んだ色差式で、M から A と B への色差が指定の比になる点を、A と B を結ぶ線上で探します。</p>
+      <div class="head"><h2>2色の測定値</h2><span class="note">Excelの範囲を左上のセルに貼り付けできます</span></div>
+      <p class="lede">色Aと色Bの中間の色Mを求めます。選んだ色差式で、MからAとBへの色差が指定の比になる点を、AとBを結ぶ線上で探します。</p>
       <div class="controls">
         <div class="ctl"><span class="lbl">手元のデータ</span>
           <div class="seg" id="segMidMode" role="group" aria-label="手元のデータ">
-            <button type="button" data-v="all">A・B の絶対値</button>
-            <button type="button" data-v="anchor">A の絶対値＋差（B − A）</button>
+            <button type="button" data-v="all">A・Bの絶対値</button>
+            <button type="button" data-v="anchor">Aの絶対値＋差（B − A）</button>
           </div>
         </div>
-        <div class="ctl"><span class="lbl">M の位置（A からの色差の割合）</span>
+        <div class="ctl"><span class="lbl">Mの位置（Aからの色差の割合）</span>
           <div class="range">
-            <input type="range" id="midT" min="0" max="100" step="1" aria-label="M の位置">
-            <input class="cell" id="midTnum" inputmode="decimal" aria-label="M の位置（%）" style="width:4.4em"><span class="small">%</span>
+            <input type="range" id="midT" min="0" max="100" step="1" aria-label="Mの位置">
+            <input class="cell" id="midTnum" inputmode="decimal" aria-label="Mの位置（%）" style="width:4.4em"><span class="small">%</span>
             <span class="note" id="midTnote"></span>
           </div>
         </div>
@@ -366,7 +367,7 @@ details summary{cursor:pointer;font-weight:700}
       <p class="note" id="midSample"></p>
       <div class="tabs-ang">
         <button type="button" class="btn" id="midReset">サンプル値に戻す</button>
-        <button type="button" class="btn" id="midCopy">結果を TSV でコピー</button>
+        <button type="button" class="btn" id="midCopy">結果をTSVでコピー</button>
       </div>
       <div id="midCopyFb"></div>
     </section>
@@ -377,7 +378,7 @@ details summary{cursor:pointer;font-weight:700}
       <div>
         <div class="gradlab"><span>A</span><span>B</span></div>
         <div class="grad" id="midGrad"></div>
-        <p class="note" style="margin-top:6px">A から B へ L*a*b* で等間隔に並べた色と、M の位置。色は L*a*b*（D65 前提）を sRGB に変換した目安です。</p>
+        <p class="note" style="margin-top:6px">AからBへL*a*b* で等間隔に並べた色と、Mの位置。色はL*a*b*（D65前提）をsRGBに変換した目安です。</p>
       </div>
       <div class="detail">
         <div class="col">
@@ -402,13 +403,15 @@ details summary{cursor:pointer;font-weight:700}
     </section>
   </div>
 
+  <section class="foot notes" aria-label="計算の補足">
+    <div><b>計算式</b>　CIE76 = √(ΔL*²+Δa*²+Δb*²)。CIE94 = √((ΔL*/kL·SL)²+(ΔC*/SC)²+(ΔH*/SH)²)、SC=1+K1·C*、SH=1+K2·C*（C* は基準側）。CMC(l:c) は基準側のL*・C*・hでSL・SC・SHを決める式（<a href="https://support.hunterlab.com/hc/en-us/article_attachments/201440465" target="_blank" rel="noopener">HunterLab</a>）。CIEDE2000はCIE 142-2001の式で、<a href="https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/" target="_blank" rel="noopener">Sharmaらの公式テストデータ</a> 34組と一致を確認済み。</div>
+    <div><b>フロップインデックス</b>　FI = 2.69 (L*15° − L*110°)^1.11 / L*45°^0.86。X-Rite MAシリーズで使われる定義で、ソリッドは0、高フロップのメタリック・パールは15〜17程度（<a href="https://www.xrite.com/service-support/Definition_of_Flop_Index" target="_blank" rel="noopener">X-Rite</a>）。ΔFIは試料 − 基準。</div>
+    <div><b>差だけで計算できる範囲</b>　Aから各試料への差は各段の差のベクトル和で、CIE76ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000とFIは基準色そのものの値で重みが変わるため、いずれかの試料の絶対値が必要です。</div>
+    <div><b>累積の読み方</b>　「単純加算」は各段のずれが同じ向きに重なった場合の最大値、「二乗和平方根」は向きが無関係な場合の目安です。CIE76では実際の値が単純加算を超えることはありませんが、CIE94・CMC・CIEDE2000は距離の公理を満たさないため、わずかに超えることがあります。</div>
+    <div><b>中間色</b>　MはAとBをL*a*b* で結んだ線上の点で、ΔE(M→A) : ΔE(M→B) が指定の比になる位置を二分法で求めます（Mを基準として計算）。CIE76ではL*a*b* の単純な内分点と一致します。5角度の場合は角度ごとに独立に求めます。</div>
+  </section>
   <footer class="foot">
-    <div><b>計算式</b>　CIE76 = √(ΔL*²+Δa*²+Δb*²)。CIE94 = √((ΔL*/kL·SL)²+(ΔC*/SC)²+(ΔH*/SH)²)、SC=1+K1·C*、SH=1+K2·C*（C* は基準側）。CMC(l:c) は基準側の L*・C*・h で SL・SC・SH を決める式（<a href="https://support.hunterlab.com/hc/en-us/article_attachments/201440465" target="_blank" rel="noopener">HunterLab</a>）。CIEDE2000 は CIE 142-2001 の式で、<a href="https://hajim.rochester.edu/ece/sites/gsharma/ciede2000/" target="_blank" rel="noopener">Sharma らの公式テストデータ</a> 34 組と一致を確認済み。</div>
-    <div><b>フロップインデックス</b>　FI = 2.69 (L*15° − L*110°)^1.11 / L*45°^0.86。X-Rite MA シリーズで使われる定義で、ソリッドは 0、高フロップのメタリック・パールは 15〜17 程度（<a href="https://www.xrite.com/service-support/Definition_of_Flop_Index" target="_blank" rel="noopener">X-Rite</a>）。ΔFI は試料 − 基準。</div>
-    <div><b>差だけで計算できる範囲</b>　A から各試料への差は各段の差のベクトル和で、CIE76 ならこれだけで正確に求まります。CIE94・CMC・CIEDE2000 と FI は基準色そのものの値で重みが変わるため、いずれかの試料の絶対値が必要です。</div>
-    <div><b>累積の読み方</b>　「単純加算」は各段のずれが同じ向きに重なった場合の最大値、「二乗和平方根」は向きが無関係な場合の目安です。CIE76 では実際の値が単純加算を超えることはありませんが、CIE94・CMC・CIEDE2000 は距離の公理を満たさないため、わずかに超えることがあります。</div>
-    <div><b>中間色</b>　M は A と B を L*a*b* で結んだ線上の点で、ΔE(M→A) : ΔE(M→B) が指定の比になる位置を二分法で求めます（M を基準として計算）。CIE76 では L*a*b* の単純な内分点と一致します。5 角度の場合は角度ごとに独立に求めます。</div>
-    <div><a href="https://github.com/kotaooka/deltae-calc">GitHub</a> ・ MIT License<span class="support"> ・ <a href="https://buymeacoffee.com/kotaooka" target="_blank" rel="noopener"><span aria-hidden="true">☕</span> 開発を応援する（Buy Me a Coffee）</a></span></div>
+    <a href="https://github.com/kotaooka/deltae-calc">GitHub</a> ・ MIT License<span class="support"> ・ <a href="https://buymeacoffee.com/kotaooka" target="_blank" rel="noopener"><span aria-hidden="true">☕</span> 開発を応援する（Buy Me a Coffee）</a></span>
   </footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -619,18 +622,18 @@ function buildAccTol(){
   let kind='';
   P.forEach((p,r)=>{
     if(p.kind!==kind){ kind=p.kind; t+=`<tr class="sub"><td colspan="${L.length+2}">${kind==='step'?'各段（前の試料 → 次の試料）':'累積（A → 各試料）'}</td></tr>`; }
-    t+=`<tr><td class="pname" style="color:${p.c}">${p.name}</td>`+L.map((_,j)=>`<td><input class="cell" style="width:4.2em" id="tol-${S.geom}-${p.id}-${j}" data-k="tol" data-tab="acc" data-r="${r}" data-col="${j}" inputmode="decimal" value="${st.tol[p.id][j]}" aria-label="${p.name} ${esc(L[j])} 許容差"></td>`).join('')+
-      (fi?`<td class="sep"><input class="cell" style="width:4.2em" id="fitol-${p.id}" data-k="tol" data-tab="acc" data-r="${r}" data-col="${L.length}" inputmode="decimal" value="${S.acc.fiTol[p.id]}" aria-label="${p.name} ΔFI 許容差"></td>`:'')+'</tr>';
+    t+=`<tr><td class="pname" style="color:${p.c}">${p.name}</td>`+L.map((_,j)=>`<td><input class="cell" style="width:4.2em" id="tol-${S.geom}-${p.id}-${j}" data-k="tol" data-tab="acc" data-r="${r}" data-col="${j}" inputmode="decimal" value="${st.tol[p.id][j]}" aria-label="${p.name} ${esc(L[j])}許容差"></td>`).join('')+
+      (fi?`<td class="sep"><input class="cell" style="width:4.2em" id="fitol-${p.id}" data-k="tol" data-tab="acc" data-r="${r}" data-col="${L.length}" inputmode="decimal" value="${S.acc.fiTol[p.id]}" aria-label="${p.name} ΔFI許容差"></td>`:'')+'</tr>';
   });
   $('accTol').innerHTML=t+'</tbody>';
 }
 function renderInputs(){
   buildIn('acc',$('accIn')); buildAccTol(); buildIn('mid',$('midIn'));
   const n=S.acc.n;
-  $('nOut').textContent=`${n} 試料（A〜${LET[n-1]}）`;
+  $('nOut').textContent=`${n}試料（A〜${LET[n-1]}）`;
   $('nMinus').disabled=n<=NMIN; $('nPlus').disabled=n>=NMAX;
   $('selAnchor').innerHTML=[...Array(n)].map((_,s)=>`<option value="${s}"${s===S.acc.anchor?' selected':''}>${LET[s]}</option>`).join('');
-  $('accInNote').textContent=S.acc.mode==='all'?'各試料の L*a*b* から、各段と A からの差を計算します。':'差は「後の試料 − 前の試料」（測色計の表示と同じ向き）で入れてください。';
+  $('accInNote').textContent=S.acc.mode==='all'?'各試料のL*a*b* から、各段とAからの差を計算します。':'差は「後の試料 − 前の試料」（測色計の表示と同じ向き）で入れてください。';
   const sample=(st,kind)=>st.touched?'':`※ 表示中の値は動作確認用の架空のサンプルです（${S.geom==='single'?'赤のソリッド塗装':'シルバーメタリック'}を想定）。`;
   $('accSample').textContent=sample(accSt()); $('midSample').textContent=sample(midSt());
   $('midT').value=S.mid.t; $('midTnum').value=S.mid.t;
@@ -808,8 +811,8 @@ function renderAccSummary(R,FI){
   R.forEach(a=>a.res.forEach(r=>{ if(r.ng) ng.push(`<div><b style="color:${r.p.c}">${r.p.name}</b>${R.length>1?' '+esc(a.ang):''}：ΔE <span class="num">${f2(r.dE)}</span> &gt; <span class="num">${f2(r.tol)}</span></div>`); }));
   if(FI) FI.d.forEach(x=>{ if(x.ng) ng.push(`<div><b style="color:${x.p.c}">${x.p.name}</b>：|ΔFI| <span class="num">${f2(Math.abs(x.v))}</span> &gt; <span class="num">${f2(x.tol)}</span></div>`); });
   const b=$('accBanner'), f=FNAME[effFormula()], np=R[0].res.length;
-  if(!ng.length){ b.className='banner ok'; b.innerHTML=`<div class="big">合格</div><div class="body">全 ${np} 組${R.length>1?'・全 5 角度':''}で許容差内です（${f}${FI?'、ΔFI 含む':''}）。</div>`; }
-  else { b.className='banner ng'; b.innerHTML=`<div class="big">NG ${ng.length} 件</div><div class="body">${ng.join('')}</div>`; }
+  if(!ng.length){ b.className='banner ok'; b.innerHTML=`<div class="big">合格</div><div class="body">全${np}組${R.length>1?'・全5角度':''}で許容差内です（${f}${FI?'、ΔFI含む':''}）。</div>`; }
+  else { b.className='banner ng'; b.innerHTML=`<div class="big">NG ${ng.length}件</div><div class="body">${ng.join('')}</div>`; }
   const card=j=>{
     let w=R[0], wr=-1;
     R.forEach(a=>{ const q=a.res[j].dE/a.res[j].tol; if(q>wr){wr=q;w=a;} });
@@ -819,7 +822,7 @@ function renderAccSummary(R,FI){
     const fi=FI?FI.d[j]:null;
     return `<div class="card" style="--c:${p.c}"><div class="route">${p.name}</div>
       <div class="val"><span class="n">${f2(r.dE)}</span><span class="u">ΔE ${f}</span>${chip}</div>
-      <div class="small muted">${R.length>1?`最も厳しい角度 ${esc(w.ang)}・`:''}許容差 <span class="num">${f2(r.tol)}</span>・${m>=0?'余裕':'超過'} <span class="num">${f2(Math.abs(m))}</span></div>
+      <div class="small muted">${R.length>1?`最も厳しい角度${esc(w.ang)}・`:''}許容差 <span class="num">${f2(r.tol)}</span>・${m>=0?'余裕':'超過'} <span class="num">${f2(Math.abs(m))}</span></div>
       ${minis}${fi?`<div class="small">ΔFI <span class="num">${sgn2(fi.v)}</span> ${fi.ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</div>`:''}</div>`;
   };
   const P=R[0].res.map(r=>r.p), idx=k=>P.map((p,j)=>p.kind===k?j:-1).filter(j=>j>=0);
@@ -844,7 +847,7 @@ function renderAccAng(R){
       if(r.ng) g+=`<text x="${x+w/2}" y="${Math.min(y(r.dE),y(r.tol))-4}" text-anchor="middle" font-size="10" font-weight="700" style="fill:var(--ng)">NG</text>`;
     });
     g+=`<text x="${gx+gw/2}" y="${H-10}" text-anchor="middle" font-size="12" class="t-num" style="fill:var(--ink)${i===S.sel?';font-weight:600':''}">${esc(a.ang)}</text>`;
-    g+=`<rect x="${gx}" y="0" width="${gw}" height="${H}" fill="transparent" style="cursor:pointer" data-sel="${i}"><title>${esc(a.ang)} を詳細表示</title></rect>`;
+    g+=`<rect x="${gx}" y="0" width="${gw}" height="${H}" fill="transparent" style="cursor:pointer" data-sel="${i}"><title>${esc(a.ang)}を詳細表示</title></rect>`;
   });
   g+=`<text x="11" y="${mt+ih/2}" font-size="11" transform="rotate(-90 11 ${mt+ih/2})" text-anchor="middle">ΔE</text>`;
   $('accAng').innerHTML=g;
@@ -852,10 +855,10 @@ function renderAccAng(R){
 }
 function renderAccFI(FI){
   const n=S.acc.n;
-  if(!FI){ $('accFi').innerHTML='<div class="callout">FI は L*15°・L*45°・L*110° の絶対値から計算するため、差だけでは求められません。「手元のデータ」で絶対値を含む入力を選び、値を入れてください。</div>'; return; }
+  if(!FI){ $('accFi').innerHTML='<div class="callout">FIはL*15°・L*45°・L*110° の絶対値から計算するため、差だけでは求められません。「手元のデータ」で絶対値を含む入力を選び、値を入れてください。</div>'; return; }
   $('accFi').innerHTML=drawFiLine(FI.fi.map((v,s)=>({v,name:LET[s],c:sCol(s)})))+
     `<div class="fi-rows">${FI.d.map(x=>`<div class="fi-row" style="--c:${x.p.c}"><b>${x.p.name}</b><span class="num">ΔFI ${sgn2(x.v)}</span>${x.ng?'<span class="chip ng">NG</span>':'<span class="chip ok">OK</span>'}</div>`).join('')}</div>
-    <p class="note">ΔFI が＋は後の試料の方がフロップが強い（正面と斜めの明るさの差が大きい）、−は弱い。</p>`;
+    <p class="note">ΔFIが＋は後の試料の方がフロップが強い（正面と斜めの明るさの差が大きい）、−は弱い。</p>`;
 }
 function words(r,abs){
   const deg=v=>{const x=Math.abs(v); return x<0.3?'わずかに':x<1.0?'やや':'はっきり';};
@@ -871,8 +874,8 @@ function renderAccDetail(R){
   const byId=id=>res.find(r=>r.p.id===id), steps=res.filter(r=>r.p.kind==='step'), fin=byId(finalId(n));
   $('accDetailTitle').textContent='詳細'+(R.length>1?'：'+a.ang:'');
   angTabs($('accAngTabs'),R);
-  $('accSw').innerHTML=abs?`<div class="sw">${lab.map((l,s)=>`<div style="background:${rgbCss(l)};color:${inkOn(l)}">${LET[s]}</div>`).join('')}</div><p class="note" style="margin-top:6px">色見本は L*a*b*（D65 前提）を sRGB に変換した目安です。メタリック感や L*&gt;100 の明るさは画面では再現できません。</p>`:'';
-  $('accAbTitle').textContent=abs?'色の地図（a*b* 平面）と明るさ（L*）':'色の地図（A を原点にした Δa*Δb*）と明るさの差（ΔL*）';
+  $('accSw').innerHTML=abs?`<div class="sw">${lab.map((l,s)=>`<div style="background:${rgbCss(l)};color:${inkOn(l)}">${LET[s]}</div>`).join('')}</div><p class="note" style="margin-top:6px">色見本はL*a*b*（D65前提）をsRGBに変換した目安です。メタリック感やL*&gt;100の明るさは画面では再現できません。</p>`:'';
+  $('accAbTitle').textContent=abs?'色の地図（a*b* 平面）と明るさ（L*）':'色の地図（Aを原点にしたΔa*Δb*）と明るさの差（ΔL*）';
   const pts=lab.map((l,s)=>({lab:l,name:LET[s],c:sCol(s)}));
   const arrows=steps.map(r=>({from:lab[r.p.a],to:lab[r.p.b],c:r.p.c}));
   if(n>=3) arrows.unshift({from:lab[0],to:lab[n-1],c:fin.p.c,dash:true});
@@ -881,14 +884,14 @@ function renderAccDetail(R){
   drawAb($('accAb'),pts,arrows,cont,!abs);
   drawL($('accL'),lab.map((l,s)=>({L:l[0],name:LET[s],c:sCol(s)})),!abs);
   $('accAbLegend').innerHTML=legend([...steps.map(r=>r.p),...(n>=3?[{name:fin.p.name,c:fin.p.c,dash:true}]:[])]);
-  $('accContourNote').textContent=`破線の囲み：A 中心が「${fin.p.name} の許容範囲」${n>=3?`、${LET[n-2]} 中心が「${LET[n-2]} → ${LET[n-1]} の許容範囲」`:''}。L* が基準と同じ場合の断面なので、L* のずれは右の図で確認してください。${f==='de76'?'CIE76 なので円になります。':FNAME[f]+' なので楕円状になります。'}`;
+  $('accContourNote').textContent=`破線の囲み：A中心が「${fin.p.name}の許容範囲」${n>=3?`、${LET[n-2]}中心が「${LET[n-2]} → ${LET[n-1]}の許容範囲」`:''}。L* が基準と同じ場合の断面なので、L* のずれは右の図で確認してください。${f==='de76'?'CIE76なので円になります。':FNAME[f]+'なので楕円状になります。'}`;
   // 色差の積み上がり
   if(n<3){
-    $('accAcc').innerHTML='<h3>色差の積み上がり</h3><div class="says">試料が 2 つなので段は 1 つです。試料を増やすと、段ごとの色差がどう積み上がるかを表示します。</div>';
+    $('accAcc').innerHTML='<h3>色差の積み上がり</h3><div class="says">試料が2つなので段は1つです。試料を増やすと、段ごとの色差がどう積み上がるかを表示します。</div>';
   }else{
     const es=steps.map(r=>r.dE), sum=es.reduce((s,v)=>s+v,0), rss=Math.hypot(...es), act=fin.dE, tolT=fin.tol;
     const vmax=Math.max(sum,act,tolT)*1.08||1, pc=v=>(v/vmax*100).toFixed(2)+'%';
-    const row=(name,inner,val)=>`<div class="arow"><span>${name}</span><div class="track">${inner}<span class="tolline" style="left:${pc(tolT)}" title="許容差 ${f2(tolT)}"></span></div><span class="num" style="text-align:right">${f2(val)}</span></div>`;
+    const row=(name,inner,val)=>`<div class="arow"><span>${name}</span><div class="track">${inner}<span class="tolline" style="left:${pc(tolT)}" title="許容差${f2(tolT)}"></span></div><span class="num" style="text-align:right">${f2(val)}</span></div>`;
     let acc=0; const stack=steps.map((r,k)=>{ const s=`<span class="bar" style="left:${pc(acc)};width:${pc(r.dE)};background:${r.p.c};${k===0?'border-radius:4px 0 0 4px;':''}${k===steps.length-1?'border-radius:0 4px 4px 0;':''}"></span>`; acc+=r.dE; return s; }).join('');
     const vs=steps.map(r=>[0,1,2].map(k=>lab[r.p.b][k]-lab[r.p.a][k])), norms=vs.map(v=>Math.hypot(...v));
     let say;
@@ -896,24 +899,24 @@ function renderAccDetail(R){
       const cos=norms[0]>1e-9&&norms[1]>1e-9?(vs[0][0]*vs[1][0]+vs[0][1]*vs[1][1]+vs[0][2]*vs[1][2])/(norms[0]*norms[1]):NaN;
       const ang=Number.isFinite(cos)?Math.acos(Math.max(-1,Math.min(1,cos)))*180/Math.PI:NaN;
       if(!Number.isFinite(cos)||Math.min(...es)<0.02) say='どちらかの段のずれがほぼゼロなので、累積の色差はもう一方の段のずれでほぼ決まります。';
-      else if(cos>0.5) say=`2 つの段のずれが<b>同じ向き</b>（なす角 ${ang.toFixed(0)}°）なので、色差が<b>積み上がって</b>います。`;
-      else if(cos<-0.5) say=`2 つの段のずれが<b>逆向き</b>（なす角 ${ang.toFixed(0)}°）なので、<b>打ち消し合って</b>小さくなっています。`;
-      else say=`ずれの向きが異なる（なす角 ${ang.toFixed(0)}°）ため、単純加算ほどには積み上がっていません。`;
+      else if(cos>0.5) say=`2つの段のずれが<b>同じ向き</b>（なす角${ang.toFixed(0)}°）なので、色差が<b>積み上がって</b>います。`;
+      else if(cos<-0.5) say=`2つの段のずれが<b>逆向き</b>（なす角${ang.toFixed(0)}°）なので、<b>打ち消し合って</b>小さくなっています。`;
+      else say=`ずれの向きが異なる（なす角${ang.toFixed(0)}°）ため、単純加算ほどには積み上がっていません。`;
     }else{
       const ns=norms.reduce((s,v)=>s+v,0), tot=[0,1,2].map(k=>vs.reduce((s,v)=>s+v[k],0));
       const eta=ns>0?Math.hypot(...tot)/ns:NaN, etaR=ns>0?Math.hypot(...norms)/ns:NaN;
       if(!Number.isFinite(eta)) say='各段のずれがほぼゼロです。';
-      else if(eta>=0.85) say=`各段のずれが<b>おおむね同じ向き</b>なので、色差が<b>積み上がって</b>います（向きのそろい具合 ${(eta*100).toFixed(0)}%）。`;
-      else if(eta<=etaR) say=`各段のずれが<b>打ち消し合い</b>、向きが無関係な場合よりも小さくなっています（向きのそろい具合 ${(eta*100).toFixed(0)}%）。`;
-      else say=`各段のずれの向きがばらついているため、単純加算ほどには積み上がっていません（向きのそろい具合 ${(eta*100).toFixed(0)}%）。`;
+      else if(eta>=0.85) say=`各段のずれが<b>おおむね同じ向き</b>なので、色差が<b>積み上がって</b>います（向きのそろい具合${(eta*100).toFixed(0)}%）。`;
+      else if(eta<=etaR) say=`各段のずれが<b>打ち消し合い</b>、向きが無関係な場合よりも小さくなっています（向きのそろい具合${(eta*100).toFixed(0)}%）。`;
+      else say=`各段のずれの向きがばらついているため、単純加算ほどには積み上がっていません（向きのそろい具合${(eta*100).toFixed(0)}%）。`;
     }
     const budget=steps.reduce((s,r)=>s+r.tol,0);
     $('accAcc').innerHTML=`<h3>色差の積み上がり（${fin.p.name}）</h3>
       ${row('単純加算（最悪）',stack,sum)}
       ${row('二乗和平方根',`<span class="bar" style="left:0;width:${pc(rss)};background:var(--muted);opacity:.5;border-radius:4px"></span>`,rss)}
       ${row(`<b>実際</b> ${fin.p.name}`,`<span class="bar" style="left:0;width:${pc(act)};background:${fin.p.c};border-radius:4px"></span>`,act)}
-      <div class="says">${say} 実際の色差は単純加算の <b class="num">${(sum>0?act/sum*100:0).toFixed(0)}%</b>${act>tolT?`、許容差 ${f2(tolT)} を <b style="color:var(--ng)">${f2(act-tolT)} 超過</b>`:`、許容差 ${f2(tolT)} まで残り ${f2(tolT-act)}`}。</div>
-      ${budget>tolT+1e-9?`<div class="says warn">許容差の配分：各段の許容差の合計 ${steps.map(r=>f2(r.tol)).join(' ＋ ')} ＝ ${f2(budget)} が、${fin.p.name} の許容差 ${f2(tolT)} を超えています。各段とも合格でも、同じ向きにずれると最終的に NG になり得ます。</div>`:''}`;
+      <div class="says">${say}実際の色差は単純加算の <b class="num">${(sum>0?act/sum*100:0).toFixed(0)}%</b>${act>tolT?`、許容差${f2(tolT)}を <b style="color:var(--ng)">${f2(act-tolT)}超過</b>`:`、許容差${f2(tolT)}まで残り${f2(tolT-act)}`}。</div>
+      ${budget>tolT+1e-9?`<div class="says warn">許容差の配分：各段の許容差の合計${steps.map(r=>f2(r.tol)).join(' ＋ ')} ＝ ${f2(budget)}が、${fin.p.name}の許容差${f2(tolT)}を超えています。各段とも合格でも、同じ向きにずれると最終的にNGになり得ます。</div>`:''}`;
   }
   // 何がずれているか（各段と最終の累積）
   const show=[...steps,...(n>=3?[fin]:[])];
@@ -921,7 +924,7 @@ function renderAccDetail(R){
   const vals=r=>!abs?[r.dL,r.da,r.db]:[r.tL,r.tC,r.tH];
   let cmax=0; show.forEach(r=>vals(r).forEach(v=>{cmax=Math.max(cmax,Math.abs(v));})); cmax=cmax||1;
   const cbar=v=>{ const w=Math.abs(v)/cmax*50; return `<div class="track"><span class="mid"></span><span class="bar" style="left:${v>=0?50:50-w}%;width:${w}%;background:var(--c);border-radius:3px"></span></div>`; };
-  const expl=!abs?'絶対値がないため、彩度・色相には分けず ΔL*・Δa*・Δb* で示します。':(f==='de76'?'ΔE*ab を明度・彩度・色相に分けた値。':`${FNAME[f]} の重みを掛けた後の値。2 乗和${f==='de00'?'（＋回転項）':''}が ΔE² になります。`);
+  const expl=!abs?'絶対値がないため、彩度・色相には分けずΔL*・Δa*・Δb* で示します。':(f==='de76'?'ΔE*abを明度・彩度・色相に分けた値。':`${FNAME[f]}の重みを掛けた後の値。2乗和${f==='de00'?'（＋回転項）':''}がΔE² になります。`);
   $('accComp').innerHTML=`<h3>何がずれているか</h3><p class="note">${expl}右が＋。言葉は「後の試料が前の試料に比べて」の向きです。</p>`+
     show.map(r=>`<div class="pairblk" style="--c:${r.p.c}"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="color:${r.p.c}">${r.p.name}</b><span class="num small">ΔE ${f2(r.dE)}</span></div>
       ${vals(r).map((v,k)=>`<div class="comp"><span>${lbl[k]}</span>${cbar(v)}<span class="num" style="text-align:right">${sgn2(v)}</span></div>`).join('')}
@@ -937,18 +940,18 @@ function renderMid(R){
   const a=R[Math.min(S.sel,R.length-1)], f=FNAME[S.formula], t=S.mid.t;
   $('midTitle').textContent='中間色'+(R.length>1?'：'+a.ang:'');
   angTabs($('midAngTabs'),R);
-  $('midTnote').textContent=t===50?'（A と B から等しい色差）':`（M → A が A → B 全体の ${t}% 相当）`;
+  $('midTnote').textContent=t===50?'（AとBから等しい色差）':`（M → AがA → B全体の${t}%相当）`;
   const C=l=>Math.hypot(l[1],l[2]), H=l=>(Math.atan2(l[2],l[1])*180/Math.PI+360)%360;
   $('midCards').innerHTML=`
-    <div class="card" style="--c:${MCOL}"><div class="route">中間色 M</div>
+    <div class="card" style="--c:${MCOL}"><div class="route">中間色M</div>
       <div class="labv">${['L*','a*','b*'].map((k,i)=>`<span><small>${k}</small><b class="num">${a.M[i].toFixed(2)}</b></span>`).join('')}</div>
       <div class="small muted">C* ${C(a.M).toFixed(2)}・h ${H(a.M).toFixed(1)}°</div></div>
     <div class="card" style="--c:var(--ink)"><div class="route">M → A</div>
       <div class="val"><span class="n num">${f2(a.dA)}</span><span class="u">ΔE ${f}</span></div>
-      <div class="small muted">A → B 全体は ΔE ${f2(a.dAB)}</div></div>
+      <div class="small muted">A → B全体はΔE ${f2(a.dAB)}</div></div>
     <div class="card" style="--c:${sCol(1)}"><div class="route">M → B</div>
       <div class="val"><span class="n num">${f2(a.dB)}</span><span class="u">ΔE ${f}</span></div>
-      <div class="small muted">M → A との差 ${f2(Math.abs(a.dA-a.dB))}</div></div>`;
+      <div class="small muted">M → Aとの差${f2(Math.abs(a.dA-a.dB))}</div></div>`;
   // A → B のグラデーションと M の位置
   const N=24; let gr='';
   for(let k=0;k<N;k++){ const s=(k+0.5)/N; gr+=`<span style="background:${rgbCss(a.A.map((v,c)=>v+s*(a.B[c]-v)))}"></span>`; }
@@ -959,7 +962,7 @@ function renderMid(R){
   const cont=[{center:a.M,tol:a.dA,c:MCOL}]; if(Math.abs(a.dA-a.dB)>1e-6) cont.push({center:a.M,tol:a.dB,c:sCol(1)});
   drawAb($('midAb'),pts,[{from:a.A,to:a.B,c:'var(--muted)',dash:true}],cont,false);
   drawL($('midL'),pts.map(p=>({L:p.lab[0],name:p.name,c:p.c})),false);
-  $('midContourNote').textContent=`破線の囲み：M を基準に ΔE ${f} が ${f2(a.dA)}${cont.length>1?` と ${f2(a.dB)}`:''} になる境界（L* が M と同じ断面）。${t===50?'A と B は同じ囲みの上（L* の差の分だけ内外にずれる）にあります。':''}`;
+  $('midContourNote').textContent=`破線の囲み：Mを基準にΔE ${f}が${f2(a.dA)}${cont.length>1?` と${f2(a.dB)}`:''}になる境界（L* がMと同じ断面）。${t===50?'AとBは同じ囲みの上（L* の差の分だけ内外にずれる）にあります。':''}`;
   // FI
   if(R.length>1){
     const fi=k=>flopIndex(R[0][k][0],R[2][k][0],R[4][k][0]), fA=fi('A'), fB=fi('B'), fM=fi('M');
@@ -971,8 +974,8 @@ function renderMid(R){
   R.forEach(r=>{ tb+=`<tr><td class="num">${esc(r.ang)}</td>${r.M.map(v=>`<td class="num">${v.toFixed(2)}</td>`).join('')}<td class="num">${C(r.M).toFixed(2)}</td><td class="num">${H(r.M).toFixed(1)}</td><td class="num">${f2(r.dA)}</td><td class="num">${f2(r.dB)}</td></tr>`; });
   $('midRes').innerHTML=tb+'</tbody>';
   const maxLin=Math.max(...R.map(r=>r.dLin));
-  $('midMethodNote').textContent=S.formula==='de76'?'CIE76 では、M は A と B の L*a*b* を単純に内分した点と一致します。':
-    `L*a*b* を単純に ${t}% 内分した点との差は最大 ΔE*ab ${maxLin.toFixed(3)} です（${f} の重みが A 側と B 側で異なるため）。`;
+  $('midMethodNote').textContent=S.formula==='de76'?'CIE76では、MはAとBのL*a*b* を単純に内分した点と一致します。':
+    `L*a*b* を単純に${t}%内分した点との差は最大ΔE*ab ${maxLin.toFixed(3)}です（${f}の重みがA側とB側で異なるため）。`;
 }
 
 // ---------- コントロール ----------
@@ -988,7 +991,7 @@ function syncControls(){
   $('p94').hidden=f!=='de94'; $('pcmc').hidden=f!=='cmc'; $('p00').hidden=f!=='de00'; $('pSingle').hidden=S.geom!=='single';
   $('accMulti').hidden=S.geom!=='multi';
   $('formulaNote').hidden=abs;
-  $('formulaNote').textContent=abs?'':'差のみでは CIE76 だけが計算できます。CIE94・CMC・CIEDE2000 とフロップインデックスは基準色の値で重みが変わるため、「手元のデータ」で絶対値を含む入力を選ぶと使えるようになります。';
+  $('formulaNote').textContent=abs?'':'差のみではCIE76だけが計算できます。CIE94・CMC・CIEDE2000とフロップインデックスは基準色の値で重みが変わるため、「手元のデータ」で絶対値を含む入力を選ぶと使えるようになります。';
   $('sel94').value=S.p94; $('cmcL').value=S.cmc.l; $('cmcC').value=S.cmc.c; $('kL').value=S.k.kL; $('kC').value=S.k.kC; $('kH').value=S.k.kH; $('singleLabel').value=S.singleLabel;
 }
 function refresh(){ syncControls(); renderInputs(); update(); }
@@ -1025,7 +1028,7 @@ $('accCopy').addEventListener('click',()=>{
 });
 $('midCopy').addEventListener('click',()=>{
   const R=computeMid(), f=FNAME[S.formula];
-  const lines=[`中間色（${f}、A からの割合 ${S.mid.t}%）`,['条件','A L*','A a*','A b*','B L*','B a*','B b*','M L*','M a*','M b*','ΔE M→A','ΔE M→B'].join('\t')];
+  const lines=[`中間色（${f}、Aからの割合${S.mid.t}%）`,['条件','A L*','A a*','A b*','B L*','B a*','B b*','M L*','M a*','M b*','ΔE M→A','ΔE M→B'].join('\t')];
   R.forEach(r=>lines.push([r.ang,...r.A,...r.B,...r.M,r.dA,r.dB].map(v=>typeof v==='number'?v.toFixed(3):v).join('\t')));
   copyText(lines.join('\n'),$('midCopyFb'));
 });

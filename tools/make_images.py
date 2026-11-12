@@ -90,7 +90,7 @@ def og():
     d = ImageDraw.Draw(im, "RGBA")
     k = 2
     d.text((72 * k, 106 * k), "QC Workbench", font=font("Regular", 26 * k), fill=(225, 234, 244))
-    d.text((70 * k, 158 * k), "色差累積ビューア", font=font("Bold", 74 * k), fill=(255, 255, 255))
+    d.text((70 * k, 158 * k), "色差計算機", font=font("Bold", 74 * k), fill=(255, 255, 255))
     sub = font("Regular", 28 * k)
     d.text((72 * k, 266 * k), "色を引き継いだときの色差の累積と、", font=sub, fill=(225, 234, 244))
     d.text((72 * k, 310 * k), "2 色の中間色を図で確かめる", font=sub, fill=(225, 234, 244))
