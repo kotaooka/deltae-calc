@@ -13,3 +13,20 @@
 ## 公開ファイルを更新したとき
 - `index.html` などを変えたら `sw.js` の `VERSION` を上げる（上げないと PWA で古い版が残る）。
 - 新しいファイルを公開に加えたら `sw.js` の `ASSETS` にも足す。
+
+## 作業の前に
+- `DEVELOPMENT.md` を読む（ファイル構成・単位・実装のメモ・公開の手順がある）。
+- 画面・README の色・字体・文言・配置は kotaooka/kotaooka.github.io の `DESIGN.md` に従う。
+- 頼まれていない機能・画面要素は足さない。範囲外の変更が必要なら、先に理由を添えて確認する。
+
+## push する前に（CI と同じ確認。すべて通るまで push しない）
+```
+pip install colour-science
+node tests/test.js
+python tests/make_reference.py && node tests/test.js
+```
+
+## 検算の原則
+- 期待値は規格の表・公表資料・独立した実装（`tests/make_reference.py` など）の値にする。Claude 自身が計算した値を期待値にしない。
+- テストを通すために期待値・許容差を緩めたり、テストを消したり飛ばしたりしない。合わないときは原因を調べ、直せなければ報告する。
+- 計算を変えたら、README の「計算の検証」（出典・照合件数・最大の差）を実際の結果に合わせて直す。
