@@ -19,9 +19,7 @@ tests/                 計算の照合テスト（test.js）、Sharma らの公�
 
 1. `index.html` などを編集する
 2. 計算部分を変えたら `node tests/test.js` で照合する
-3. `sw.js` の `VERSION` を上げる（上げないと、インストール済みの PWA に古い版が残る）。公開するファイルを増やしたら `ASSETS` にも足す
-4. 画面が変わったら、スクリーンショットを撮り直す（下記）
-5. `main` に push すると GitHub Pages に反映される
+3. `main` に push すると GitHub Pages に反映される
 
 ## 計算式
 
